@@ -722,16 +722,8 @@
                 <div class="game-clock">
                     <div class="date-box">📅 <strong id="gameDateDisplay">01.01.2026</strong></div>
                     <div class="time-box">⏱️ <strong id="gameTimeDisplay">00:00</strong></div>
-                    <span class="speed-label" id="speedLabel">5x</span>
+                    <span class="speed-label">60x</span>
                     <span class="offline-badge" id="offlineBadge">⏳ Kein Offline-Mining</span>
-                </div>
-                <div class="speed-controls">
-                    <label>⏩ Geschwindigkeit:</label>
-                    <button class="speed-btn" data-speed="1">1x</button>
-                    <button class="speed-btn active" data-speed="5">5x</button>
-                    <button class="speed-btn" data-speed="10">10x</button>
-                    <button class="speed-btn" data-speed="30">30x</button>
-                    <button class="speed-btn" data-speed="60">60x</button>
                 </div>
             </div>
 
@@ -931,7 +923,7 @@
         <div class="footer">
             <button class="reset-btn" id="resetBtn">🔄 Neustart</button>
             <div style="display:flex; gap:8px; align-items:center;">
-                <span style="color:#8899b3; font-size:13px;">⚡ 1 Sekunde = <span id="timeSpeedDisplay" style="color:#ffd54f; font-weight:600;">5</span> Sekunden im Spiel</span>
+                <span style="color:#8899b3; font-size:13px;">⚡ 1 Sekunde = <span style="color:#ffd54f; font-weight:600;">60</span> Sekunden im Spiel</span>
             </div>
         </div>
     </div>
@@ -988,16 +980,16 @@
             battery: 10000,
             maxMiners: 4,
             dealerRates: [0, 0, 0, 0],
-            dealerTimer: 15 * 60,
+            dealerTimer: 24 * 60 * 60,
             lastTick: Date.now(),
-            lastSave: Date.now(), // 🔥 NEU: Timestamp für Offline-Farming
+            lastSave: Date.now(),
             difficulty: 1.0,
             totalMined: 0,
             weatherIndex: 0,
             weatherTimer: 4 * 3600,
             weatherHistory: [],
             gameTime: 0,
-            speed: 5,
+            speed: 60,
             lastPaymentDay: 0,
             paymentHistory: [],
             rateHistory: []
@@ -1352,8 +1344,6 @@
 
             document.getElementById('gameDateDisplay').textContent = gameTime.date;
             document.getElementById('gameTimeDisplay').textContent = gameTime.time;
-            document.getElementById('timeSpeedDisplay').textContent = state.speed;
-            document.getElementById('speedLabel').textContent = state.speed + 'x';
 
             document.getElementById('weatherIcon').textContent = weather.icon;
             document.getElementById('weatherText').textContent = weather.label;
@@ -1769,14 +1759,17 @@
         function updateTimer() {
             const el = document.getElementById('dealerTimer');
             if (!el) return;
-            const remaining = Math.max(0, Math.floor((state.dealerTimer - (Date.now() - state.lastTick) / 1000 * state
-            .speed) / 60));
-            if (remaining <= 0) el.textContent = '⏳ Kurswechsel jetzt!';
-            else el.textContent = `⏳ Nächster Kurswechsel in ~${remaining} min`;
+            const remainingSecs = Math.max(0, Math.floor(state.dealerTimer - (Date.now() - state.lastTick) / 1000 * state.speed));
+            const remainingHours = Math.floor(remainingSecs / 3600);
+            const remainingMins = Math.floor((remainingSecs % 3600) / 60);
+            let timerText;
+            if (remainingSecs <= 0) timerText = '⏳ Kurswechsel jetzt!';
+            else if (remainingHours > 0) timerText = `⏳ Nächster Kurswechsel in ~${remainingHours}h ${remainingMins}min`;
+            else timerText = `⏳ Nächster Kurswechsel in ~${remainingMins}min`;
 
-            document.querySelectorAll('.dealer-card .timer').forEach((timer, idx) => {
-                if (remaining <= 0) timer.textContent = '⏳ Kurswechsel jetzt!';
-                else timer.textContent = `⏳ Nächster Kurswechsel in ~${remaining} min`;
+            el.textContent = timerText;
+            document.querySelectorAll('.dealer-card .timer').forEach(timer => {
+                timer.textContent = timerText;
             });
         }
 
@@ -1884,7 +1877,7 @@
                 }
                 if (state.dealerTimer <= 0) {
                     generateRates();
-                    state.dealerTimer = 15 * 60;
+                    state.dealerTimer = 24 * 60 * 60;
                 }
 
                 tickCounter++;
@@ -1911,7 +1904,7 @@
             state.battery = 10000;
             state.maxMiners = 4;
             state.dealerRates = [0, 0, 0, 0];
-            state.dealerTimer = 15 * 60;
+            state.dealerTimer = 24 * 60 * 60;
             state.lastTick = Date.now();
             state.lastSave = Date.now();
             state.difficulty = 1.0;
@@ -1930,20 +1923,9 @@
         }
 
         // ============================================================
-        //  SPEED CONTROLS
+        //  SPEED CONTROLS (entfernt - fest 60x)
         // ============================================================
-        function initSpeedControls() {
-            const buttons = document.querySelectorAll('.speed-btn');
-            buttons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    buttons.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    state.speed = parseInt(this.dataset.speed);
-                    document.getElementById('speedLabel').textContent = state.speed + 'x';
-                    document.getElementById('timeSpeedDisplay').textContent = state.speed;
-                });
-            });
-        }
+        function initSpeedControls() { /* speed ist fest 60x */ }
 
         // ============================================================
         //  TABS
