@@ -1046,9 +1046,12 @@
 
             const hash = getTotalHash();
             const difficulty = getDifficultyMultiplier();
-            // Vereinfacht: durchschnittliche Solarproduktion (55% Deckung durch Tag/Nacht-Mix)
-            const avgProduction = getTotalProduction() * 0.55;
             const consumption = getTotalPower();
+
+            // Durchschnittliche Solarproduktion über 24h unabhängig vom aktuellen Wetter:
+            // 9h Nacht (0%) + 4h bewölkt (50%) + 3h Regen (15%) + 8h Sonne (100%) = ~48% Durchschnitt
+            const peakProduction = getTotalPeakProduction(); // maximale Solarleistung bei 100% Sonne
+            const avgProduction = peakProduction * 0.48;
             const netPower = avgProduction - consumption;
 
             // Batterie über die Offline-Zeit simulieren
@@ -1061,8 +1064,8 @@
                 state.battery = Math.min(totalBatteryCap, state.battery + charge);
             }
 
-            // Mining nur wenn Strom vorhanden (Batterie > 0 oder Solar deckt Verbrauch)
-            const hasPower = avgProduction >= consumption || state.battery > 0;
+            // Mining möglich wenn Solar im Durchschnitt genug liefert ODER Batterie noch geladen
+            const hasPower = (avgProduction > 0 || state.battery > 0) && state.miners.length > 0;
 
             // Spielzeit vorwärts spulen
             state.gameTime += Math.floor(gameSeconds);
@@ -1150,6 +1153,13 @@
             for (const idx of state.miners) total += ASIC_MINERS[idx].power;
             if (total > 0) total = total * 1.15;
             return Math.round(total);
+        }
+
+        function getTotalPeakProduction() {
+            // Maximale Solarleistung bei 100% Sonne (wetterunabhängig)
+            let total = 0;
+            for (const idx of state.solarSystems) total += SOLAR_SYSTEMS[idx].power;
+            return total;
         }
 
         function getTotalProduction() {
