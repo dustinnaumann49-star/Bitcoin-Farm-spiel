@@ -1022,6 +1022,20 @@
                 if (!Array.isArray(state.weatherHistory)) state.weatherHistory = [];
                 if (!Array.isArray(state.paymentHistory)) state.paymentHistory = [];
                 if (!Array.isArray(state.rateHistory)) state.rateHistory = [];
+
+                // Wetter nach dem Laden neu bestimmen basierend auf aktueller Spielzeit
+                // damit kein eingefrorener Nacht-Zustand bleibt
+                const hours = (state.gameTime % 86400) / 3600;
+                const isNight = hours < 6 || hours >= 21;
+                if (isNight) {
+                    state.weatherIndex = 3; // Nacht
+                    const hoursUntilMorning = hours >= 21 ? (24 - hours + 6) : (6 - hours);
+                    state.weatherTimer = hoursUntilMorning * 3600;
+                } else {
+                    // Tagsüber: zufälliges Tageswetter neu würfeln
+                    changeWeather();
+                }
+
                 return true;
             } catch (e) { return false; }
         }
@@ -1088,7 +1102,7 @@
             const textEl = document.getElementById('offlineMinedText');
 
             if (hash > 0 && hasPower && state.miners.length > 0) {
-                const minedPerGameSecond = (hash / difficulty) * 0.0000000002;
+                const minedPerGameSecond = (hash / difficulty) * 0.0000000000681;
                 const mined = minedPerGameSecond * gameSeconds;
 
                 state.btc += mined;
@@ -1454,7 +1468,7 @@
             }
 
             const effectiveHash = getTotalHash() / getDifficultyMultiplier();
-            const dailyBtc = effectiveHash * 0.0000000005;
+            const dailyBtc = effectiveHash * 0.00000000588;
             const dailyRevenue = dailyBtc * getAverageRate();
             const dailyPowerCost = (consumption * 24) / 1000 * 0.30;
             const dailyNet = dailyRevenue - dailyPowerCost;
@@ -1997,7 +2011,7 @@
             if (hasPower && getTotalHash() > 0 && state.miners.length > 0) {
                 const hash = getTotalHash();
                 const difficulty = getDifficultyMultiplier();
-                const mined = (hash / difficulty) * 0.0000000002;
+                const mined = (hash / difficulty) * 0.0000000000681;
                 state.btc += mined;
                 state.totalMined += mined;
             }
