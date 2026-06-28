@@ -713,7 +713,7 @@
         <div class="tab-content active" id="tab-server">
             <div style="display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
                 <h3>Mining Rigs · <span id="minerCount">0</span> aktiv</h3>
-                <span class="badge">Max. 6 Rigs</span>
+                <span class="badge">Max. <span id="maxMinersDisplay">10</span> Rigs</span>
                 <span class="power-total">⚡ <span id="solarCount">0</span> Solaranlagen</span>
                 <span class="power-total">🔋 <span id="batteryPercent">0</span>%</span>
             </div>
@@ -958,7 +958,7 @@
                 desc: '15 kWp · 20 kWh Speicher · für Gewerbe' }
         ];
 
-        const SERVER_UPGRADE = { name: 'Mining-Farm Erweiterung', price: 800, desc: '+1 Rig-Slot (max. 6)' };
+        const SERVER_UPGRADE = { name: 'Mining-Farm Erweiterung', price: 800, desc: '+1 Rig-Slot (max. 10)' };
 
         const WEATHER_TYPES = [
             { id: 'sunny', icon: '☀️', label: 'Sonnig', production: 1.0, minDuration: 4, maxDuration: 8 },
@@ -1460,6 +1460,10 @@
             grid.innerHTML = '';
             const production = getTotalProduction();
 
+            // Max-Rigs Badge aktualisieren
+            const maxEl = document.getElementById('maxMinersDisplay');
+            if (maxEl) maxEl.textContent = state.maxMiners;
+
             for (let i = 0; i < state.maxMiners; i++) {
                 const hasMiner = i < state.miners.length;
                 const card = document.createElement('div');
@@ -1470,6 +1474,7 @@
                     const hasPower = production > 0 || state.battery > 0;
                     let statusClass = hasPower ? 'online' : 'offline';
                     let statusText = hasPower ? '✅ Aktiv' : '⛔ Kein Strom';
+                    const refund = Math.round(miner.price * 0.5);
 
                     card.className = `miner-card ${statusClass}`;
                     card.innerHTML = `
@@ -1478,6 +1483,13 @@
                         <div class="info">⚡ ${miner.hash} TH/s · ${miner.power}W · ${miner.noise}</div>
                         <div class="info">Effizienz: ${miner.efficiency} J/TH</div>
                         <div class="status-badge ${statusClass}">${statusText}</div>
+                        <button class="sell-miner-btn" data-slot="${i}" style="
+                            margin-top:10px; width:100%; padding:8px;
+                            background:rgba(255,100,100,0.15); border:1px solid #ff6b6b;
+                            color:#ff6b6b; border-radius:8px; cursor:pointer; font-size:13px;
+                            font-weight:600; transition:0.2s;">
+                            🔄 Verkaufen (€${refund})
+                        </button>
                     `;
                 } else {
                     card.className = 'miner-card empty';
@@ -1489,6 +1501,13 @@
                 }
                 grid.appendChild(card);
             }
+
+            // Event-Listener für Verkauf-Buttons
+            grid.querySelectorAll('.sell-miner-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    sellMiner(parseInt(this.dataset.slot));
+                });
+            });
         }
 
         // ============================================================
@@ -1802,6 +1821,18 @@
             render();
         }
 
+        function sellMiner(slotIdx) {
+            if (slotIdx < 0 || slotIdx >= state.miners.length) return;
+            const minerIdx = state.miners[slotIdx];
+            const miner = ASIC_MINERS[minerIdx];
+            const refund = Math.round(miner.price * 0.5);
+            if (!confirm(`🔄 Rig verkaufen?\n\n"${miner.name}" wird verkauft.\nRückerstattung: €${refund.toFixed(2)} (50% des Kaufpreises)`)) return;
+            state.miners.splice(slotIdx, 1);
+            state.eur += refund;
+            render();
+            saveGame();
+        }
+
         function buySolarSystem(idx) {
             const system = SOLAR_SYSTEMS[idx];
             if (state.eur < system.price) return;
@@ -1812,7 +1843,7 @@
         }
 
         function buyUpgrade() {
-            if (state.eur < SERVER_UPGRADE.price || state.maxMiners >= 6) return;
+            if (state.eur < SERVER_UPGRADE.price || state.maxMiners >= 10) return;
             state.maxMiners += 1;
             state.eur -= SERVER_UPGRADE.price;
             render();
