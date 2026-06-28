@@ -586,7 +586,7 @@
             </div>
 
             <div class="start-hint">
-                🚀 <strong>Du startest mit:</strong> 1x AvalonMiner A1166 Pro + 1x Kleine Solaranlage 5 kWp (inkl. 5 kWh Speicher)
+                🚀 <strong>Du startest mit:</strong> 1x AvalonMiner A1166 Pro + 1x Mittel 8 kWp Solaranlage (inkl. 10 kWh Speicher) · Startkapital: €8.000
             </div>
 
             <div class="costs">
@@ -704,8 +704,8 @@
                 </div>
                 <div class="finance-card">
                     <h3>⚡ Strom</h3>
-                    <div class="row"><span class="label">Betrag (monatlich)</span><span class="value red" id="financePowerAmount">€0.00</span></div>
-                    <div class="row"><span class="label">Verbrauch (Ø)</span><span class="value yellow" id="financePowerUsage">0 W</span></div>
+                    <div class="row"><span class="label">Betrag (monatlich, nach Solar)</span><span class="value red" id="financePowerAmount">€0.00</span></div>
+                    <div class="row"><span class="label">Bruttoverbrauch</span><span class="value yellow" id="financePowerUsage">0 W</span></div>
                     <div class="row"><span class="label">Nächste Zahlung</span><span class="value yellow" id="financePowerNext">--</span></div>
                     <div class="next-payment">
                         <div class="label">⏳ Countdown</div>
@@ -761,13 +761,13 @@
         ];
 
         const SOLAR_SYSTEMS = [
-            { name: 'Kleine Anlage 5 kWp', price: 10300, power: 5000, battery: 5000,
+            { name: 'Kleine Anlage 5 kWp', price: 8500, power: 5000, battery: 5000,
             desc: '5 kWp · 5 kWh Speicher · für kleines Dach' },
-            { name: 'Mittel 8 kWp + Speicher', price: 19000, power: 8000, battery: 10000,
+            { name: 'Mittel 8 kWp + Speicher', price: 16000, power: 8000, battery: 10000,
                 desc: '8 kWp · 10 kWh Speicher · für EFH' },
-            { name: 'Groß 10 kWp + Speicher', price: 20300, power: 10000, battery: 15000,
+            { name: 'Groß 10 kWp + Speicher', price: 18500, power: 10000, battery: 15000,
                 desc: '10 kWp · 15 kWh Speicher · für großes Dach' },
-            { name: 'Profi 15 kWp + Speicher', price: 28000, power: 15000, battery: 20000,
+            { name: 'Profi 15 kWp + Speicher', price: 26000, power: 15000, battery: 20000,
                 desc: '15 kWp · 20 kWh Speicher · für Gewerbe' }
         ];
 
@@ -787,10 +787,10 @@
         // ============================================================
         let state = {
             btc: 0,
-            eur: 5000,
+            eur: 8000,
             miners: [0],
-            solarSystems: [0],
-            battery: 5000,
+            solarSystems: [1],
+            battery: 10000,
             maxMiners: 4,
             dealerRates: [0, 0, 0, 0],
             dealerTimer: 15 * 60,
@@ -848,20 +848,24 @@
 
                 if (hash > 0 && hasPower && state.miners.length > 0) {
                     // Mining simulieren
-                    const minedPerSecond = (hash / difficulty) * 0.0000002;
+                    const minedPerSecond = (hash / difficulty) * 0.0000000002;
                     const mined = minedPerSecond * diffSeconds;
 
                     state.btc += mined;
                     state.totalMined += mined;
 
-                    // Batterie entladen (vereinfacht)
+                    // Batterie entladen oder aufladen (vereinfacht)
                     const consumption = getTotalPower();
                     const production = getTotalProduction();
                     const netPower = production - consumption;
+                    const totalBatteryCap = getTotalBattery();
 
                     if (netPower < 0) {
                         const batteryDrain = Math.abs(netPower) / 3600 * diffSeconds;
                         state.battery = Math.max(0, state.battery - batteryDrain);
+                    } else if (netPower > 0) {
+                        const batteryCharge = netPower / 3600 * diffSeconds;
+                        state.battery = Math.min(totalBatteryCap, state.battery + batteryCharge);
                     }
 
                     // Info anzeigen
@@ -961,7 +965,11 @@
 
         function getPowerCost() {
             const consumption = getTotalPower();
-            return (consumption * 24 * 30) / 1000 * 0.30;
+            const production = getTotalProduction();
+            // Solar-Deckung: Nur der ungedeckte Netzstrom-Anteil wird berechnet
+            const avgSolarProduction = production * 0.55; // Durchschnittliche Deckung (~55% der Zeit produziert Solar)
+            const netConsumption = Math.max(0, consumption - avgSolarProduction);
+            return (netConsumption * 24 * 30) / 1000 * 0.30;
         }
 
         function getTotalMonthlyCosts() {
@@ -1189,7 +1197,7 @@
             }
 
             const effectiveHash = getTotalHash() / getDifficultyMultiplier();
-            const dailyBtc = effectiveHash * 0.0000005;
+            const dailyBtc = effectiveHash * 0.0000000005;
             const dailyRevenue = dailyBtc * getAverageRate();
             const dailyPowerCost = (consumption * 24) / 1000 * 0.30;
             const dailyNet = dailyRevenue - dailyPowerCost;
@@ -1614,7 +1622,7 @@
             if (hasPower && getTotalHash() > 0 && state.miners.length > 0) {
                 const hash = getTotalHash();
                 const difficulty = getDifficultyMultiplier();
-                const mined = (hash / difficulty) * 0.0000002;
+                const mined = (hash / difficulty) * 0.0000000002;
                 state.btc += mined;
                 state.totalMined += mined;
             }
@@ -1655,7 +1663,7 @@
                 }
 
                 tickCounter++;
-                if (tickCounter % 1209600 === 0) {
+                if (tickCounter % (7 * 86400) === 0) {
                     updateDifficulty();
                 }
 
@@ -1672,10 +1680,10 @@
         // ============================================================
         function resetGame() {
             state.btc = 0;
-            state.eur = 5000;
+            state.eur = 8000;
             state.miners = [0];
-            state.solarSystems = [0];
-            state.battery = 5000;
+            state.solarSystems = [1];
+            state.battery = 10000;
             state.maxMiners = 4;
             state.dealerRates = [0, 0, 0, 0];
             state.dealerTimer = 15 * 60;
