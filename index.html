@@ -792,6 +792,8 @@
             </div>
 
             <div class="profit">
+                <span>⛏️ Mining: <span id="miningPerHour" style="color:#f7931a;">0.000000</span> BTC/h</span>
+                <span>📅 Pro Spieltag: <span id="miningPerDay" style="color:#f7931a;">0.000000</span> BTC</span>
                 <span>💰 Täglicher Ertrag: <span id="dailyProfit" style="color:#f7931a;">0.00</span> €</span>
                 <span>⚡ Stromkosten/Tag: <span id="dailyCost" style="color:#ff6b6b;">0.00</span> €</span>
                 <span>📈 Netto/Tag: <span id="dailyNet" style="color:#81c784;">0.00</span> €</span>
@@ -1469,12 +1471,16 @@
 
             const effectiveHash = getTotalHash() / getDifficultyMultiplier();
             const dailyBtc = effectiveHash * 0.00000000588;
+            // BTC pro Echtzeit-Stunde: dailyBtc / (86400 Spielsek/Tag / 60x) * 3600
+            const btcPerRealHour = dailyBtc / (86400 / 60) * 3600;
             const dailyRevenue = dailyBtc * getAverageRate();
             const dailyPowerCost = (consumption * 24) / 1000 * 0.30;
             const dailyNet = dailyRevenue - dailyPowerCost;
             const monthlyNet = dailyNet * 30 - getTotalMonthlyCosts();
             const tax = getTaxOnProfit(monthlyNet > 0 ? monthlyNet : 0);
 
+            document.getElementById('miningPerHour').textContent = btcPerRealHour.toFixed(6);
+            document.getElementById('miningPerDay').textContent = dailyBtc.toFixed(6);
             document.getElementById('dailyProfit').textContent = dailyRevenue.toFixed(2);
             document.getElementById('dailyCost').textContent = dailyPowerCost.toFixed(2);
             document.getElementById('dailyNet').textContent = dailyNet.toFixed(2);
