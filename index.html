@@ -1057,8 +1057,18 @@
             // Mining nur wenn Strom vorhanden (Batterie > 0 oder Solar deckt Verbrauch)
             const hasPower = avgProduction >= consumption || state.battery > 0;
 
-            // Spielzeit ebenfalls vorwärts spulen
+            // Spielzeit vorwärts spulen
             state.gameTime += Math.floor(gameSeconds);
+
+            // dealerTimer für offline-Zeit korrekt reduzieren (damit kein sofortiger Kurswechsel beim Start)
+            if (state.dealerTimer > 0) {
+                state.dealerTimer = Math.max(0, state.dealerTimer - Math.floor(gameSeconds));
+                // Wenn Timer abgelaufen: neuen Kurs generieren und Timer zurücksetzen
+                if (state.dealerTimer <= 0) {
+                    generateRates();
+                    state.dealerTimer = 24 * 60 * 60;
+                }
+            }
 
             const hours = Math.floor(realSeconds / 3600);
             const minutes = Math.floor((realSeconds % 3600) / 60);
