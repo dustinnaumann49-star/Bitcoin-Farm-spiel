@@ -943,17 +943,23 @@
         // ============================================================
         const ASIC_MINERS = [
             { name: 'AvalonMiner A1166 Pro', price: 15000, hash: 68, power: 3260, efficiency: 48.0, noise: '72 dB',
-                desc: '68 TH/s · 3260W · Canaan' },
+                desc: '68 TH/s · 3260W · Canaan',
+                image: 'https://www.cryptominerbros.com/wp-content/uploads/2021/04/Canaan-Avalon-1166-PRO-78Ths.webp' },
             { name: 'AvalonMiner A1266', price: 22000, hash: 90, power: 3420, efficiency: 38.0, noise: '72 dB',
-                desc: '90 TH/s · 3420W · Canaan' },
+                desc: '90 TH/s · 3420W · Canaan',
+                image: 'https://www.cryptominerbros.com/wp-content/uploads/2021/01/Canaan-Avalon-1246-85ths.webp' },
             { name: 'Whatsminer M50S', price: 28000, hash: 126, power: 3276, efficiency: 26.0, noise: '72 dB',
-                desc: '126 TH/s · 3276W · MicroBT' },
+                desc: '126 TH/s · 3276W · MicroBT',
+                image: 'https://www.cryptominerbros.com/wp-content/uploads/2021/11/Bitmain-Antminer-S19-XP-140THs.webp' },
             { name: 'Antminer S19 XP', price: 35000, hash: 140, power: 3010, efficiency: 21.5, noise: '75 dB',
-                desc: '140 TH/s · 3010W · Bitmain' },
+                desc: '140 TH/s · 3010W · Bitmain',
+                image: 'https://apextomining.com/apexto/uploads/2024/01/1-21-1.jpg' },
             { name: 'Whatsminer M60', price: 48000, hash: 280, power: 3300, efficiency: 11.8, noise: '72 dB',
-                desc: '280 TH/s · 3300W · MicroBT' },
+                desc: '280 TH/s · 3300W · MicroBT',
+                image: 'https://www.cryptominerbros.com/wp-content/uploads/2021/11/Bitmain-Antminer-S19-XP-140THs.webp' },
             { name: 'Antminer S21 Hydro', price: 65000, hash: 335, power: 5360, efficiency: 16.0, noise: '65 dB (Hydro)',
-                desc: '335 TH/s · 5360W · Bitmain' }
+                desc: '335 TH/s · 5360W · Bitmain',
+                image: 'https://www.cryptominerbros.com/wp-content/uploads/2023/09/Antminer-S21-Hyd.webp' }
         ];
 
         const SOLAR_SYSTEMS = [
@@ -1525,6 +1531,7 @@
 
                     card.className = `miner-card ${statusClass}`;
                     card.innerHTML = `
+                        ${miner.image ? `<img src="${miner.image}" alt="${miner.name}" style="width:100%; height:140px; object-fit:contain; border-radius:8px; margin-bottom:10px; background:#0a0e14; padding:6px;">` : ''}
                         <h3>🖥️ ${miner.name}</h3>
                         <div class="parts">${miner.desc}</div>
                         <div class="info">⚡ ${miner.hash} TH/s · ${miner.power}W · ${miner.noise}</div>
@@ -1576,6 +1583,7 @@
                 div.style.borderLeftColor = '#ce93d8';
                 const canBuy = state.eur >= miner.price && state.miners.length < state.maxMiners;
                 div.innerHTML = `
+                    ${miner.image ? `<img src="${miner.image}" alt="${miner.name}" style="width:70px; height:70px; object-fit:contain; border-radius:8px; background:#0a0e14; padding:4px; flex-shrink:0;">` : ''}
                     <div class="desc">
                         <strong>🖥️ ${miner.name}</strong>
                         <small>${miner.desc} · ${miner.hash} TH/s · ${miner.power}W</small>
