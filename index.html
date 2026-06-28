@@ -1016,10 +1016,15 @@
         // ============================================================
         //  WETTER-LOGIK
         // ============================================================
+        function isNightTime() {
+            const hours = (state.gameTime % 86400) / 3600;
+            return hours < 6 || hours >= 21;
+        }
+
         function getNextWeather(currentIndex) {
-            const weights = [0.4, 0.3, 0.2, 0.1];
-            let r = Math.random(),
-                cumulative = 0;
+            if (isNightTime()) return 3;
+            const weights = [0.45, 0.35, 0.20];
+            let r = Math.random(), cumulative = 0;
             for (let i = 0; i < weights.length; i++) {
                 cumulative += weights[i];
                 if (r < cumulative) return i;
@@ -1030,17 +1035,39 @@
         function changeWeather() {
             const current = state.weatherIndex;
             let next;
-            do { next = getNextWeather(current); } while (next === current && Math.random() < 0.3);
-
-            const hours = (state.gameTime % 86400) / 3600;
-            if (hours < 6 || hours > 20) next = 3;
+            do { next = getNextWeather(current); } while (next === current && Math.random() < 0.5);
 
             state.weatherIndex = next;
             const weather = getWeather();
-            const duration = weather.minDuration + Math.random() * (weather.maxDuration - weather.minDuration);
+
+            let duration;
+            if (next === 3) {
+                const hours = (state.gameTime % 86400) / 3600;
+                const hoursUntilMorning = hours >= 21 ? (24 - hours + 6) : (6 - hours);
+                duration = Math.max(0.5, hoursUntilMorning);
+            } else {
+                duration = weather.minDuration + Math.random() * (weather.maxDuration - weather.minDuration);
+            }
+
             state.weatherTimer = duration * 3600;
             state.weatherHistory.push(weather.id);
             if (state.weatherHistory.length > 100) state.weatherHistory.shift();
+        }
+
+        function checkDayNightTransition() {
+            const night = isNightTime();
+            const currentlyNight = state.weatherIndex === 3;
+
+            if (night && !currentlyNight) {
+                state.weatherIndex = 3;
+                const hours = (state.gameTime % 86400) / 3600;
+                const hoursUntilMorning = hours >= 21 ? (24 - hours + 6) : (6 - hours);
+                state.weatherTimer = Math.max(0.5, hoursUntilMorning) * 3600;
+                state.weatherHistory.push('night');
+                if (state.weatherHistory.length > 100) state.weatherHistory.shift();
+            } else if (!night && currentlyNight && state.weatherTimer <= 0) {
+                changeWeather();
+            }
         }
 
         function getWeatherStats() {
@@ -1650,7 +1677,9 @@
                 if (state.weatherTimer > 0) {
                     state.weatherTimer = Math.max(0, state.weatherTimer - 1);
                 }
-                if (state.weatherTimer <= 0) {
+                // Tag/Nacht live pruefen: falsches Wetter sofort korrigieren
+                checkDayNightTransition();
+                if (state.weatherTimer <= 0 && !isNightTime()) {
                     changeWeather();
                 }
 
