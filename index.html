@@ -810,6 +810,7 @@
                 <div style="font-size:14px; color:#8899b3;">Aktueller Bitcoin-Kurs (Durchschnitt)</div>
                 <div style="font-size:36px; font-weight:700; color:#f7931a;" id="avgRateDisplay">€0.00</div>
                 <div style="font-size:13px; color:#8899b3;">Stand: <span id="rateTimeDisplay">--</span></div>
+                <div style="margin-top:8px; font-size:14px; font-weight:600;" id="marketPhaseDisplay">–</div>
             </div>
 
             <div class="dealer-grid" id="dealerGrid"></div>
@@ -1704,6 +1705,19 @@
             if (avgEl) avgEl.textContent = `€${avgRate.toFixed(2)}`;
             if (timeEl) timeEl.textContent = getGameDateTime(state.gameTime).full;
 
+            // Marktphase anzeigen
+            const phaseEl = document.getElementById('marketPhaseDisplay');
+            if (phaseEl && state.marketPhase) {
+                const phaseMap = {
+                    bull:     { label: '📈 Bull-Run',    color: '#81c784' },
+                    bear:     { label: '📉 Bear-Market', color: '#e57373' },
+                    sideways: { label: '➡️ Seitwärts',   color: '#ffd54f' }
+                };
+                const p = phaseMap[state.marketPhase] || phaseMap.sideways;
+                phaseEl.textContent = p.label + ` (noch ${state.marketPhaseDaysLeft} Spieltage)`;
+                phaseEl.style.color = p.color;
+            }
+
             for (let i = 0; i < 4; i++) {
                 const rate = state.dealerRates[i] || 0;
                 const rateEl = document.getElementById(`dealerRate_${i}`);
@@ -1870,10 +1884,64 @@
             render();
         }
 
-        function generateRates() {
-            const oldRates = [...state.dealerRates];
+        // ============================================================
+        //  MARKT-LOGIK
+        // ============================================================
+        // Marktphasen: bull / bear / sideways
+        // btcPrice = globaler Referenzpreis, bewegt sich je nach Phase
+        // Händler-Kurse = btcPrice ± kleiner individueller Spread
+
+        function initMarket() {
+            if (!state.btcPrice) state.btcPrice = 55000;
+            if (!state.marketPhase) state.marketPhase = 'sideways';
+            if (!state.marketPhaseDaysLeft) state.marketPhaseDaysLeft = 7;
+            if (!state.marketVolatility) state.marketVolatility = 0.03;
+        }
+
+        function advanceMarket() {
+            initMarket();
+
+            // Phasenwechsel wenn Zeit abgelaufen
+            state.marketPhaseDaysLeft--;
+            if (state.marketPhaseDaysLeft <= 0) {
+                const roll = Math.random();
+                if (roll < 0.35) {
+                    state.marketPhase = 'bull';
+                    state.marketPhaseDaysLeft = 3 + Math.floor(Math.random() * 10); // 3–12 Tage
+                    state.marketVolatility = 0.02 + Math.random() * 0.03;
+                } else if (roll < 0.65) {
+                    state.marketPhase = 'bear';
+                    state.marketPhaseDaysLeft = 2 + Math.floor(Math.random() * 8);  // 2–9 Tage
+                    state.marketVolatility = 0.02 + Math.random() * 0.04;
+                } else {
+                    state.marketPhase = 'sideways';
+                    state.marketPhaseDaysLeft = 5 + Math.floor(Math.random() * 10); // 5–14 Tage
+                    state.marketVolatility = 0.005 + Math.random() * 0.015;
+                }
+            }
+
+            // Trend je nach Phase
+            let trend = 0;
+            if (state.marketPhase === 'bull')     trend = 0.01 + Math.random() * 0.04;  // +1% bis +5%
+            if (state.marketPhase === 'bear')     trend = -(0.01 + Math.random() * 0.05); // -1% bis -6%
+            if (state.marketPhase === 'sideways') trend = (Math.random() - 0.5) * 0.02;  // ±1%
+
+            // Zufälliger Tages-Noise obendrauf
+            const noise = (Math.random() - 0.5) * 2 * state.marketVolatility;
+
+            // Seltene Extremereignisse (5% Chance): Crash oder Pump
+            let shock = 0;
+            const eventRoll = Math.random();
+            if (eventRoll < 0.025) shock = -(0.08 + Math.random() * 0.12); // Crash: -8% bis -20%
+            if (eventRoll > 0.975) shock =  (0.08 + Math.random() * 0.15); // Pump:  +8% bis +23%
+
+            const change = trend + noise + shock;
+            state.btcPrice = Math.max(8000, Math.round(state.btcPrice * (1 + change)));
+
+            // Händler-Kurse = btcPrice ± individueller Spread (±2%)
             for (let i = 0; i < 4; i++) {
-                state.dealerRates[i] = Math.round((40000 + Math.random() * 35000) * 100) / 100;
+                const spread = (Math.random() - 0.5) * 0.04; // ±2%
+                state.dealerRates[i] = Math.round(state.btcPrice * (1 + spread) * 100) / 100;
             }
 
             const gameTime = getGameDateTime(state.gameTime);
@@ -1881,9 +1949,14 @@
             state.rateHistory.push({
                 time: gameTime.full,
                 rate: avgRate,
+                phase: state.marketPhase,
                 rates: [...state.dealerRates]
             });
-            if (state.rateHistory.length > 20) state.rateHistory.shift();
+            if (state.rateHistory.length > 30) state.rateHistory.shift();
+        }
+
+        function generateRates() {
+            advanceMarket();
         }
 
         // ============================================================
