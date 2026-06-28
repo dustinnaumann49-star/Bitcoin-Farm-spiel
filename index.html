@@ -507,6 +507,181 @@
         ::-webkit-scrollbar-track { background: #0a0e14; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #2a3648; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #3a4a6a; }
+
+        /* ===== MOBILE BOTTOM NAV (nur Mobil) ===== */
+        .mobile-bottom-nav {
+            display: none;
+        }
+
+        /* ===== MOBILE: <= 600px ===== */
+        @media (max-width: 600px) {
+            body {
+                padding: 0;
+                align-items: stretch;
+            }
+            .container {
+                border-radius: 0;
+                padding: 10px 10px 80px 10px; /* Platz für Bottom-Nav */
+                box-shadow: none;
+                min-height: 100vh;
+            }
+            /* Header kompakt */
+            .header {
+                padding: 10px 12px;
+                margin-bottom: 12px;
+                border-radius: 10px;
+                gap: 8px;
+            }
+            .header h1 { font-size: 17px; }
+            .realistic-badge { display: none; }
+            /* Stats: 2×3 Grid statt Flex-Reihe */
+            .stats {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 4px 12px;
+                width: 100%;
+            }
+            .stats span { font-size: 12px; }
+            /* Desktop-Tabs ausblenden, Bottom-Nav einblenden */
+            .tabs { display: none; }
+            .mobile-bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: #141c26;
+                border-top: 1px solid #2a3648;
+                z-index: 1000;
+                box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+            }
+            .mobile-bottom-nav .mob-tab {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 4px;
+                background: none;
+                border: none;
+                color: #8899b3;
+                font-size: 10px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: 0.2s;
+                gap: 3px;
+            }
+            .mobile-bottom-nav .mob-tab .mob-icon { font-size: 20px; }
+            .mobile-bottom-nav .mob-tab.active { color: #f7931a; }
+            .mobile-bottom-nav .mob-tab.active .mob-icon { transform: scale(1.15); }
+            /* Game-Clock kompakter */
+            .game-clock { gap: 6px; }
+            .game-clock .date-box,
+            .game-clock .time-box { font-size: 11px; padding: 3px 8px; }
+            .offline-badge { display: none; }
+            .speed-label { font-size: 11px; margin-left: 4px; }
+            /* Speed-Buttons kleiner und scrollbar */
+            .speed-controls {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .speed-controls label { font-size: 12px; white-space: nowrap; }
+            .speed-btn { padding: 6px 12px; font-size: 12px; }
+            /* Wetter kompakter */
+            .weather-forecast { padding: 10px 12px; gap: 6px; }
+            .weather-icon { font-size: 22px; }
+            .weather-forecast .weather-detail { font-size: 12px; }
+            /* Costs-Bar scrollbar auf Mobil */
+            .costs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                gap: 12px;
+                padding: 10px 12px;
+            }
+            .costs span { white-space: nowrap; }
+            /* Miner-Grid: 1 Spalte */
+            .miner-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .miner-card { padding: 14px; }
+            /* Shop-Items: Button separat, volle Breite */
+            .shop-item {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 10px 12px;
+                gap: 8px;
+            }
+            .shop-item button {
+                width: 100%;
+                padding: 10px;
+                font-size: 14px;
+                border-radius: 10px;
+            }
+            /* Dealer: 1 Spalte */
+            .dealer-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .dealer-card .rate { font-size: 26px; }
+            /* Finance: 1 Spalte */
+            .finance-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .finance-summary {
+                gap: 10px;
+            }
+            .finance-summary .item .value { font-size: 15px; }
+            /* Footer: gestapelt */
+            .footer {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .reset-btn { width: 100%; padding: 12px; font-size: 14px; }
+            /* Profit-Bar scrollbar */
+            .profit {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                gap: 12px;
+            }
+            .profit span { white-space: nowrap; font-size: 13px; }
+            /* Touch-Targets: Mindest-Höhe 44px für alle Buttons */
+            button { min-height: 44px; }
+            .shop-item button,
+            .dealer-card .sell-btn,
+            .reset-btn,
+            .speed-btn,
+            .tab-btn { min-height: 44px; }
+            /* Dealer BTC-Input größer für Touch */
+            .dealer-card .btc-amount input {
+                width: 70px;
+                font-size: 18px;
+                padding: 8px;
+            }
+            /* Payment-History: nur 2 Spalten sichtbar */
+            .finance-card .history .entry {
+                flex-wrap: wrap;
+                gap: 2px;
+            }
+        }
+
+        /* ===== TABLET: 601px – 900px ===== */
+        @media (min-width: 601px) and (max-width: 900px) {
+            body { padding: 12px; }
+            .container { padding: 18px; border-radius: 14px; }
+            .header h1 { font-size: 20px; }
+            .stats span { font-size: 12px; }
+            .miner-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+            .dealer-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+            .finance-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+            .tab-btn { font-size: 15px; padding: 8px 16px; }
+        }
     </style>
 </head>
 <body>
@@ -731,6 +906,26 @@
                 </div>
             </div>
         </div>
+
+        <!-- ===== MOBILE BOTTOM NAV ===== -->
+        <nav class="mobile-bottom-nav" id="mobileNav">
+            <button class="mob-tab active" data-tab="server">
+                <span class="mob-icon">🏭</span>
+                <span>Rigs</span>
+            </button>
+            <button class="mob-tab" data-tab="shop">
+                <span class="mob-icon">🛒</span>
+                <span>Shop</span>
+            </button>
+            <button class="mob-tab" data-tab="dealer">
+                <span class="mob-icon">📈</span>
+                <span>Händler</span>
+            </button>
+            <button class="mob-tab" data-tab="finance">
+                <span class="mob-icon">💰</span>
+                <span>Finanzen</span>
+            </button>
+        </nav>
 
         <!-- ===== FOOTER ===== -->
         <div class="footer">
@@ -1754,6 +1949,7 @@
         // ============================================================
         function initTabs() {
             const tabButtons = document.querySelectorAll('.tab-btn');
+            const mobButtons = document.querySelectorAll('.mob-tab');
             const tabContents = {
                 server: document.getElementById('tab-server'),
                 shop: document.getElementById('tab-shop'),
@@ -1761,15 +1957,22 @@
                 finance: document.getElementById('tab-finance')
             };
 
-            tabButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    tabButtons.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    Object.values(tabContents).forEach(content => content.classList.remove('active'));
-                    const tabId = this.dataset.tab;
-                    if (tabContents[tabId]) tabContents[tabId].classList.add('active');
-                });
-            });
+            function switchTab(tabId) {
+                // Desktop-Tabs
+                tabButtons.forEach(b => b.classList.remove('active'));
+                tabButtons.forEach(b => { if (b.dataset.tab === tabId) b.classList.add('active'); });
+                // Mobile-Tabs
+                mobButtons.forEach(b => b.classList.remove('active'));
+                mobButtons.forEach(b => { if (b.dataset.tab === tabId) b.classList.add('active'); });
+                // Inhalte
+                Object.values(tabContents).forEach(c => c.classList.remove('active'));
+                if (tabContents[tabId]) tabContents[tabId].classList.add('active');
+                // Mobil: nach oben scrollen beim Tab-Wechsel
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            tabButtons.forEach(btn => btn.addEventListener('click', function() { switchTab(this.dataset.tab); }));
+            mobButtons.forEach(btn => btn.addEventListener('click', function() { switchTab(this.dataset.tab); }));
         }
 
         // ============================================================
