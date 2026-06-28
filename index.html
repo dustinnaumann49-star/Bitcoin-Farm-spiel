@@ -1001,7 +1001,6 @@
         //  SPEICHERN / LADEN
         // ============================================================
         function saveGame() {
-            state.lastSave = Date.now(); // 🔥 Timestamp aktualisieren
             try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
         }
 
@@ -1025,79 +1024,98 @@
         // ============================================================
         function processOfflineFarming() {
             const now = Date.now();
-            const diffSeconds = (now - state.lastSave) / 1000;
+            const realSeconds = (now - state.lastSave) / 1000;
+            // Offline-Zeit mit Spielgeschwindigkeit multiplizieren
+            const gameSeconds = realSeconds * 60;
 
-            // Nur wenn mehr als 60 Sekunden vergangen sind
-            if (diffSeconds > 60) {
-                const hash = getTotalHash();
-                const difficulty = getDifficultyMultiplier();
-                const hasPower = getTotalProduction() > 0 || state.battery > 0;
+            // Timestamp sofort aktualisieren und speichern damit er korrekt ist
+            state.lastSave = now;
 
-                if (hash > 0 && hasPower && state.miners.length > 0) {
-                    // Mining simulieren
-                    const minedPerSecond = (hash / difficulty) * 0.0000000002;
-                    const mined = minedPerSecond * diffSeconds;
+            // Nur wenn mehr als 60 Echtzeit-Sekunden vergangen sind
+            if (realSeconds < 60) {
+                saveGame();
+                return;
+            }
 
-                    state.btc += mined;
-                    state.totalMined += mined;
+            const hash = getTotalHash();
+            const difficulty = getDifficultyMultiplier();
+            // Vereinfacht: durchschnittliche Solarproduktion (55% Deckung durch Tag/Nacht-Mix)
+            const avgProduction = getTotalProduction() * 0.55;
+            const consumption = getTotalPower();
+            const netPower = avgProduction - consumption;
 
-                    // Batterie entladen oder aufladen (vereinfacht)
-                    const consumption = getTotalPower();
-                    const production = getTotalProduction();
-                    const netPower = production - consumption;
-                    const totalBatteryCap = getTotalBattery();
+            // Batterie über die Offline-Zeit simulieren
+            const totalBatteryCap = getTotalBattery();
+            if (netPower < 0) {
+                const drain = Math.abs(netPower) / 3600 * gameSeconds;
+                state.battery = Math.max(0, state.battery - drain);
+            } else {
+                const charge = netPower / 3600 * gameSeconds;
+                state.battery = Math.min(totalBatteryCap, state.battery + charge);
+            }
 
-                    if (netPower < 0) {
-                        const batteryDrain = Math.abs(netPower) / 3600 * diffSeconds;
-                        state.battery = Math.max(0, state.battery - batteryDrain);
-                    } else if (netPower > 0) {
-                        const batteryCharge = netPower / 3600 * diffSeconds;
-                        state.battery = Math.min(totalBatteryCap, state.battery + batteryCharge);
-                    }
+            // Mining nur wenn Strom vorhanden (Batterie > 0 oder Solar deckt Verbrauch)
+            const hasPower = avgProduction >= consumption || state.battery > 0;
 
-                    // Info anzeigen
-                    const minutes = Math.floor(diffSeconds / 60);
-                    document.getElementById('offlineInfo').style.display = 'block';
-                    document.getElementById('offlineMinedText').textContent =
-                        `Du warst ${minutes} Minuten weg und hast ${mined.toFixed(6)} BTC gemined.`;
+            // Spielzeit ebenfalls vorwärts spulen
+            state.gameTime += Math.floor(gameSeconds);
 
-                    // Offline-Badge aktualisieren
-                    document.getElementById('offlineBadge').textContent = `⏳ ${minutes}min Offline-Farming`;
-                    document.getElementById('offlineBadge').style.borderColor = '#81c784';
+            const hours = Math.floor(realSeconds / 3600);
+            const minutes = Math.floor((realSeconds % 3600) / 60);
+            const timeStr = hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
 
-                    // Status auf Orange setzen
-                    document.getElementById('offlineDisplay').textContent = '🟡 Offline-Farming';
-                    document.getElementById('offlineDisplay').style.color = '#ff9800';
+            const infoEl = document.getElementById('offlineInfo');
+            const textEl = document.getElementById('offlineMinedText');
 
-                    // Nach 5 Sekunden wieder ausblenden
-                    setTimeout(() => {
-                        document.getElementById('offlineInfo').style.display = 'none';
-                        document.getElementById('offlineBadge').textContent = '⏳ Kein Offline-Mining';
-                        document.getElementById('offlineBadge').style.borderColor = '#4a6a4a';
-                        document.getElementById('offlineDisplay').textContent = '🟢 Online';
-                        document.getElementById('offlineDisplay').style.color = '#81c784';
-                    }, 8000);
-                } else {
-                    // Kein Mining möglich
-                    document.getElementById('offlineInfo').style.display = 'block';
-                    document.getElementById('offlineInfo').style.borderColor = '#6a4a4a';
-                    document.getElementById('offlineInfo').innerHTML = `
+            if (hash > 0 && hasPower && state.miners.length > 0) {
+                const minedPerGameSecond = (hash / difficulty) * 0.0000000002;
+                const mined = minedPerGameSecond * gameSeconds;
+
+                state.btc += mined;
+                state.totalMined += mined;
+
+                // Monatszahlungen für vergangene Spieltage nachberechnen
+                const gameDaysPassed = Math.floor(gameSeconds / 86400);
+                if (gameDaysPassed > 0) {
+                    const monthlyRent = getRentCost();
+                    const monthlyMaintenance = getMaintenanceCost();
+                    const monthlyPower = getPowerCost();
+                    const monthlyTotal = monthlyRent + monthlyMaintenance + monthlyPower;
+                    const dailyCost = monthlyTotal / 30;
+                    state.eur -= dailyCost * gameDaysPassed;
+                }
+
+                if (textEl) textEl.textContent =
+                    `Du warst ${timeStr} offline (= ${Math.floor(gameSeconds / 3600)} Spielstunden) und hast ${mined.toFixed(6)} BTC gemined.`;
+
+                if (infoEl) {
+                    infoEl.style.display = 'block';
+                    infoEl.style.borderColor = '#4a6a4a';
+                }
+
+                setTimeout(() => {
+                    if (infoEl) infoEl.style.display = 'none';
+                }, 10000);
+
+            } else {
+                if (infoEl) {
+                    infoEl.style.display = 'block';
+                    infoEl.style.borderColor = '#6a4a4a';
+                    infoEl.innerHTML = `
                         <span style="color:#ff6b6b;">⛔ <strong>Kein Offline-Mining!</strong></span>
-                        <span style="color:#ff6b6b;">Keine aktiven Miner oder kein Strom vorhanden.</span>
+                        <span style="color:#ff6b6b;">Du warst ${timeStr} offline – aber kein Strom oder keine Miner aktiv.</span>
                     `;
                     setTimeout(() => {
-                        document.getElementById('offlineInfo').style.display = 'none';
-                        document.getElementById('offlineInfo').innerHTML = `
+                        infoEl.style.display = 'none';
+                        infoEl.innerHTML = `
                             <span style="color:#81c784;">🔄 <strong>Offline-Farming!</strong></span>
-                            <span style="color:#a5d6a7;" id="offlineMinedText">Du warst 0 Minuten weg und hast 0.0000 BTC gemined.</span>
+                            <span style="color:#a5d6a7;" id="offlineMinedText">Wird berechnet...</span>
                         `;
-                        document.getElementById('offlineInfo').style.borderColor = '#4a6a4a';
-                    }, 5000);
+                        infoEl.style.borderColor = '#4a6a4a';
+                    }, 8000);
                 }
             }
 
-            // Timestamp zurücksetzen
-            state.lastSave = now;
             saveGame();
         }
 
@@ -1982,8 +2000,9 @@
             setInterval(tick, 1000);
             setInterval(updateTimer, 5000);
 
-            // 🔥 Alle 30 Sekunden speichern (für Offline-Farming)
+            // Alle 30 Sekunden speichern inkl. aktuellem Timestamp für Offline-Farming
             setInterval(() => {
+                state.lastSave = Date.now();
                 saveGame();
             }, 30000);
         }
