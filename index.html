@@ -942,32 +942,32 @@
         //  DATEN
         // ============================================================
         const ASIC_MINERS = [
-            { name: 'AvalonMiner A1166 Pro', price: 1500, hash: 68, power: 3260, efficiency: 48.0, noise: '72 dB',
+            { name: 'AvalonMiner A1166 Pro', price: 15000, hash: 68, power: 3260, efficiency: 48.0, noise: '72 dB',
                 desc: '68 TH/s · 3260W · Canaan' },
-            { name: 'AvalonMiner A1266', price: 2200, hash: 90, power: 3420, efficiency: 38.0, noise: '72 dB',
+            { name: 'AvalonMiner A1266', price: 22000, hash: 90, power: 3420, efficiency: 38.0, noise: '72 dB',
                 desc: '90 TH/s · 3420W · Canaan' },
-            { name: 'Whatsminer M50S', price: 2800, hash: 126, power: 3276, efficiency: 26.0, noise: '72 dB',
+            { name: 'Whatsminer M50S', price: 28000, hash: 126, power: 3276, efficiency: 26.0, noise: '72 dB',
                 desc: '126 TH/s · 3276W · MicroBT' },
-            { name: 'Antminer S19 XP', price: 3500, hash: 140, power: 3010, efficiency: 21.5, noise: '75 dB',
+            { name: 'Antminer S19 XP', price: 35000, hash: 140, power: 3010, efficiency: 21.5, noise: '75 dB',
                 desc: '140 TH/s · 3010W · Bitmain' },
-            { name: 'Whatsminer M60', price: 4800, hash: 280, power: 3300, efficiency: 11.8, noise: '72 dB',
+            { name: 'Whatsminer M60', price: 48000, hash: 280, power: 3300, efficiency: 11.8, noise: '72 dB',
                 desc: '280 TH/s · 3300W · MicroBT' },
-            { name: 'Antminer S21 Hydro', price: 6500, hash: 335, power: 5360, efficiency: 16.0, noise: '65 dB (Hydro)',
+            { name: 'Antminer S21 Hydro', price: 65000, hash: 335, power: 5360, efficiency: 16.0, noise: '65 dB (Hydro)',
                 desc: '335 TH/s · 5360W · Bitmain' }
         ];
 
         const SOLAR_SYSTEMS = [
-            { name: 'Kleine Anlage 5 kWp', price: 8500, power: 5000, battery: 5000,
+            { name: 'Kleine Anlage 5 kWp', price: 85000, power: 5000, battery: 5000,
             desc: '5 kWp · 5 kWh Speicher · für kleines Dach' },
-            { name: 'Mittel 8 kWp + Speicher', price: 16000, power: 8000, battery: 10000,
+            { name: 'Mittel 8 kWp + Speicher', price: 160000, power: 8000, battery: 10000,
                 desc: '8 kWp · 10 kWh Speicher · für EFH' },
-            { name: 'Groß 10 kWp + Speicher', price: 18500, power: 10000, battery: 15000,
+            { name: 'Groß 10 kWp + Speicher', price: 185000, power: 10000, battery: 15000,
                 desc: '10 kWp · 15 kWh Speicher · für großes Dach' },
-            { name: 'Profi 15 kWp + Speicher', price: 26000, power: 15000, battery: 20000,
+            { name: 'Profi 15 kWp + Speicher', price: 260000, power: 15000, battery: 20000,
                 desc: '15 kWp · 20 kWh Speicher · für Gewerbe' }
         ];
 
-        const SERVER_UPGRADE = { name: 'Mining-Farm Erweiterung', price: 800, desc: '+1 Rig-Slot (max. 10)' };
+        const SERVER_UPGRADE = { name: 'Mining-Farm Erweiterung', price: 8000, desc: '+1 Rig-Slot (max. 10)' };
 
         const WEATHER_TYPES = [
             { id: 'sunny', icon: '☀️', label: 'Sonnig', production: 1.0, minDuration: 4, maxDuration: 8 },
@@ -983,7 +983,7 @@
         // ============================================================
         let state = {
             btc: 0,
-            eur: 8000,
+            eur: 80000,
             miners: [0],
             solarSystems: [1],
             battery: 10000,
@@ -1104,7 +1104,7 @@
             const textEl = document.getElementById('offlineMinedText');
 
             if (hash > 0 && hasPower && state.miners.length > 0) {
-                const minedPerGameSecond = (hash / difficulty) * 0.0000000000681;
+                const minedPerGameSecond = (hash / difficulty) * 0.000000000681;
                 const mined = minedPerGameSecond * gameSeconds;
 
                 state.btc += mined;
@@ -1197,7 +1197,7 @@
         function getSolarCount() { return state.solarSystems.length; }
         function getWeather() { return WEATHER_TYPES[state.weatherIndex]; }
 
-        function getRentCost() { return getMinerCount() * 100 + 50; }
+        function getRentCost() { return getMinerCount() * 3000 + 1500; }
 
         function getMaintenanceCost() {
             let totalValue = 0;
@@ -1470,7 +1470,7 @@
             }
 
             const effectiveHash = getTotalHash() / getDifficultyMultiplier();
-            const dailyBtc = effectiveHash * 0.00000000588;
+            const dailyBtc = effectiveHash * 0.0000000588;
             // BTC pro Echtzeit-Stunde: dailyBtc / (86400 Spielsek/Tag / 60x) * 3600
             const btcPerRealHour = dailyBtc / (86400 / 60) * 3600;
             const dailyRevenue = dailyBtc * getAverageRate();
@@ -2017,7 +2017,7 @@
             if (hasPower && getTotalHash() > 0 && state.miners.length > 0) {
                 const hash = getTotalHash();
                 const difficulty = getDifficultyMultiplier();
-                const mined = (hash / difficulty) * 0.0000000000681;
+                const mined = (hash / difficulty) * 0.000000000681;
                 state.btc += mined;
                 state.totalMined += mined;
             }
@@ -2084,7 +2084,7 @@
         // ============================================================
         function resetGame() {
             state.btc = 0;
-            state.eur = 8000;
+            state.eur = 80000;
             state.miners = [0];
             state.solarSystems = [1];
             state.battery = 10000;
