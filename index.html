@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Miner - ASIC Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0a0e14;
+            color: #e0e6ed;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            background: #141c26;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: #1a2432;
+            padding: 15px 25px;
+            border-radius: 15px;
+        }
+        .header h1 {
+            font-size: 24px;
+            color: #f7931a;
+        }
+        .stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .stats span {
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .stats .btc {
+            color: #f7931a;
+        }
+        .stats .eur {
+            color: #4fc3f7;
+        }
+        .stats .power {
+            color: #ffd54f;
+        }
+        .stats .hash {
+            color: #ce93d8;
+        }
+        .stats .status {
+            color: #81c784;
+        }
+        .stats .battery {
+            color: #4fc3f7;
+        }
+        .stats .time {
+            color: #ffd54f;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #2a3648;
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #8899b3;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 10px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab-btn:hover {
+            background: #1e2a3a;
+            color: #fff;
+        }
+        .tab-btn.active {
+            background: #2a3a52;
+            color: #fff;
+        }
+        .tab-content {
+            display: none;
+            animation: fade 0.3s;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fade {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+        .miner-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .miner-card {
+            background: #1a2432;
+            border-radius: 15px;
+            padding: 18px;
+            text-align: center;
+            border: 1px solid #2a3648;
+            transition: 0.3s;
+        }
+        .miner-card.empty {
+            opacity: 0.5;
+            border-style: dashed;
+        }
+        .miner-card.offline {
+            opacity: 0.5;
+            border-color: #ff6b6b;
+        }
+        .miner-card h3 {
+            color: #b0c4de;
+            margin-bottom: 10px;
+        }
+        .miner-card .parts {
+            font-size: 13px;
+            color: #8899b3;
+            min-height: 50px;
+        }
+        .miner-card .info {
+            font-size: 12px;
+            color: #ce93d8;
+            margin-top: 8px;
+        }
+        .miner-card .status-badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .miner-card .status-badge.online {
+            background: #2e7d32;
+            color: #a5d6a7;
+        }
+        .miner-card .status-badge.offline {
+            background: #7d2e2e;
+            color: #ef9a9a;
+        }
+        .shop-item {
+            background: #1a2432;
+            border-radius: 12px;
+            padding: 10px 18px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-left: 4px solid #4a6a8f;
+        }
+        .shop-item .desc {
+            display: flex;
+            gap: 12px;
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+        .shop-item .desc strong {
+            color: #e0e6ed;
+        }
+        .shop-item .desc small {
+            color: #8899b3;
+            font-size: 12px;
+        }
+        .shop-item button {
+            background: #2a4a6a;
+            border: none;
+            color: white;
+            padding: 5px 18px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            font-size: 13px;
+        }
+        .shop-item button:hover:not(:disabled) {
+            background: #3a6a8a;
+            transform: scale(1.02);
+        }
+        .shop-item button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .shop-category {
+            font-weight: 600;
+            color: #b0c4de;
+            margin: 15px 0 5px 0;
+            border-bottom: 2px solid #2a3648;
+            padding-bottom: 4px;
+            font-size: 16px;
+        }
+        .shop-category .cat-icon {
+            margin-right: 8px;
+        }
+
+        /* ===== DEALER ===== */
+        .dealer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .dealer-card {
+            background: #1a2432;
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #2a3648;
+            text-align: center;
+        }
+        .dealer-card .rate {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffd54f;
+            margin: 10px 0;
+        }
+        .dealer-card .rate-change {
+            font-size: 14px;
+            color: #8899b3;
+        }
+        .dealer-card .rate-change.up {
+            color: #81c784;
+        }
+        .dealer-card .rate-change.down {
+            color: #ff6b6b;
+        }
+        .dealer-card .fee {
+            font-size: 12px;
+            color: #8899b3;
+            margin-bottom: 10px;
+        }
+        .dealer-card .btc-amount {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .dealer-card .btc-amount label {
+            color: #8899b3;
+            font-size: 14px;
+        }
+        .dealer-card .btc-amount input {
+            background: #0a0e14;
+            border: 1px solid #2a3648;
+            color: #e0e6ed;
+            padding: 6px 12px;
+            border-radius: 8px;
+            width: 80px;
+            font-size: 16px;
+            text-align: center;
+        }
+        .dealer-card .btc-amount input:focus {
+            outline: none;
+            border-color: #4fc3f7;
+        }
+        .dealer-card .btc-amount .max-btn {
+            background: #2a3a52;
+            border: none;
+            color: #b0c4de;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .dealer-card .btc-amount .max-btn:hover {
+            background: #3a4a6a;
+        }
+        .dealer-card .preview {
+            background: #0a0e14;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #2a3648;
+        }
+        .dealer-card .preview .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 14px;
+        }
+        .dealer-card .preview .row .label {
+            color: #8899b3;
+        }
+        .dealer-card .preview .row .value {
+            color: #e0e6ed;
+            font-weight: 600;
+        }
+        .dealer-card .preview .row .value.green {
+            color: #81c784;
+        }
+        .dealer-card .preview .row .value.red {
+            color: #ff6b6b;
+        }
+        .dealer-card .preview .total {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4fc3f7;
+            padding-top: 8px;
+            border-top: 1px solid #2a3648;
+            margin-top: 8px;
+        }
+        .dealer-card .sell-btn {
+            background: #2a6a4a;
+            border: none;
+            color: white;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            margin-top: 10px;
+            font-size: 16px;
+            width: 100%;
+        }
+        .dealer-card .sell-btn:hover:not(:disabled) {
+            background: #3a8a5a;
+            transform: scale(1.02);
+        }
+        .dealer-card .sell-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .dealer-card .timer {
+            font-size: 13px;
+            color: #8899b3;
+            margin-top: 10px;
+        }
+
+        /* ===== DEALER HISTORY ===== */
+        .dealer-history {
+            background: #1a2432;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid #2a3648;
+        }
+        .dealer-history h3 {
+            color: #b0c4de;
+            margin-bottom: 10px;
+        }
+        .dealer-history .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+        }
+        .dealer-history .history-item {
+            background: #0a0e14;
+            border-radius: 8px;
+            padding: 6px 10px;
+            text-align: center;
+            border: 1px solid #1a2432;
+            font-size: 12px;
+            color: #8899b3;
+        }
+        .dealer-history .history-item .price {
+            color: #ffd54f;
+            font-weight: 600;
+        }
+
+        /* ===== FINANZEN ===== */
+        .finance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .finance-card {
+            background: #1a2432;
+            border-radius: 15px;
+            padding: 18px;
+            border: 1px solid #2a3648;
+        }
+        .finance-card h3 {
+            color: #b0c4de;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #2a3648;
+            padding-bottom: 8px;
+        }
+        .finance-card .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 14px;
+        }
+        .finance-card .row .label {
+            color: #8899b3;
+        }
+        .finance-card .row .value {
+            color: #e0e6ed;
+            font-weight: 600;
+        }
+        .finance-card .row .value.red {
+            color: #ff6b6b;
+        }
+        .finance-card .row .value.green {
+            color: #81c784;
+        }
+        .finance-card .row .value.yellow {
+            color: #ffd54f;
+        }
+        .finance-card .next-payment {
+            margin-top: 12px;
+            padding: 10px;
+            background: #2a2a3a;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #3a3a4a;
+        }
+        .finance-card .next-payment .countdown {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4fc3f7;
+        }
+        .finance-card .next-payment .label {
+            font-size: 13px;
+            color: #8899b3;
+        }
+        .finance-card .total-cost {
+            margin-top: 12px;
+            padding: 12px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #4a4a4a;
+        }
+        .finance-card .total-cost .amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ff6b6b;
+        }
+        .finance-card .total-cost .label {
+            font-size: 13px;
+            color: #8899b3;
+        }
+        .finance-card .history {
+            margin-top: 12px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .finance-card .history .entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 12px;
+            color: #8899b3;
+            border-bottom: 1px solid #1a1a2a;
+        }
+        .finance-card .history .entry .date {
+            color: #4fc3f7;
+        }
+        .finance-card .history .entry .amount.red {
+            color: #ff6b6b;
+        }
+        .finance-card .history .entry .amount.green {
+            color: #81c784;
+        }
+        .finance-summary {
+            background: #2a2a3a;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #3a3a4a;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .finance-summary .item {
+            text-align: center;
+        }
+        .finance-summary .item .label {
+            font-size: 12px;
+            color: #8899b3;
+        }
+        .finance-summary .item .value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .finance-summary .item .value.green {
+            color: #81c784;
+        }
+        .finance-summary .item .value.red {
+            color: #ff6b6b;
+        }
+        .finance-summary .item .value.yellow {
+            color: #ffd54f;
+        }
+
+        .footer {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .reset-btn,
+        .speed-btn {
+            background: #3a2a3a;
+            border: none;
+            color: #ccc;
+            padding: 8px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .reset-btn:hover,
+        .speed-btn:hover {
+            background: #5a3a4a;
+        }
+        .speed-btn.active {
+            background: #2a4a3a;
+            color: #a5d6a7;
+            border: 1px solid #4a8a4a;
+        }
+        .speed-controls {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .speed-controls label {
+            color: #8899b3;
+            font-size: 14px;
+            margin-right: 5px;
+        }
+        .badge {
+            display: inline-block;
+            background: #2a3a52;
+            padding: 3px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #b0c4de;
+        }
+        .hint {
+            color: #667a99;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        .timer {
+            color: #8899b3;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .warning {
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+        .success {
+            color: #81c784;
+            font-weight: 600;
+        }
+        .price-update {
+            color: #ffd54f;
+            font-size: 11px;
+        }
+        .realistic-badge {
+            background: #2a4a3a;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 10px;
+            color: #a5d6a7;
+        }
+        .power-total {
+            font-size: 14px;
+            color: #ffd54f;
+        }
+        .battery-bar {
+            width: 100%;
+            height: 20px;
+            background: #1a2432;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #2a3648;
+            margin-top: 8px;
+        }
+        .battery-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4fc3f7, #81c784);
+            transition: width 0.5s;
+            border-radius: 10px;
+        }
+        .solar-info {
+            background: #1a2432;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #2a3648;
+        }
+        .solar-info .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .solar-info .label {
+            color: #8899b3;
+        }
+        .solar-info .value {
+            color: #e0e6ed;
+            font-weight: 600;
+        }
+        .solar-info .value.green {
+            color: #81c784;
+        }
+        .solar-info .value.yellow {
+            color: #ffd54f;
+        }
+        .solar-info .value.red {
+            color: #ff6b6b;
+        }
+        .solar-info .value.orange {
+            color: #ff9800;
+        }
+        .weather-icon {
+            font-size: 28px;
+        }
+        .profit {
+            background: #1a2432;
+            border-radius: 12px;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border: 1px solid #2a3648;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .start-hint {
+            background: #2a3a2a;
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin: 10px 0;
+            border: 1px solid #4a6a4a;
+            color: #a5d6a7;
+            font-size: 14px;
+        }
+        .start-hint strong {
+            color: #ffd54f;
+        }
+        .costs {
+            background: #2a2a3a;
+            border-radius: 12px;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border: 1px solid #3a3a4a;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .costs .label {
+            color: #8899b3;
+        }
+        .costs .value {
+            color: #e0e6ed;
+            font-weight: 600;
+        }
+        .costs .value.red {
+            color: #ff6b6b;
+        }
+        .costs .value.green {
+            color: #81c784;
+        }
+        .weather-forecast {
+            background: #1a2432;
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin: 10px 0;
+            border: 1px solid #2a3648;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .weather-forecast .weather-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .weather-forecast .weather-detail {
+            font-size: 13px;
+            color: #8899b3;
+        }
+        .weather-forecast .weather-detail strong {
+            color: #e0e6ed;
+        }
+        .time-display {
+            background: #1a2432;
+            border-radius: 12px;
+            padding: 8px 15px;
+            border: 1px solid #2a3648;
+            font-size: 13px;
+            color: #8899b3;
+        }
+        .time-display strong {
+            color: #ffd54f;
+        }
+        .time-display .date-highlight {
+            color: #4fc3f7;
+        }
+        .speed-label {
+            background: #2a4a3a;
+            padding: 2px 12px;
+            border-radius: 12px;
+            color: #a5d6a7;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .game-clock {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .game-clock .date-box {
+            background: #1a2432;
+            padding: 4px 12px;
+            border-radius: 8px;
+            border: 1px solid #2a3648;
+            font-size: 13px;
+        }
+        .game-clock .date-box strong {
+            color: #4fc3f7;
+        }
+        .game-clock .time-box {
+            background: #1a2432;
+            padding: 4px 12px;
+            border-radius: 8px;
+            border: 1px solid #2a3648;
+            font-size: 13px;
+        }
+        .game-clock .time-box strong {
+            color: #ffd54f;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0e14;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a3648;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a4a6a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>⛏️ Bitcoin Miner <span class="realistic-badge">🔴 ASIC Edition</span></h1>
+            <div class="stats">
+                <span class="btc">₿ <span id="btcDisplay">0.0000</span></span>
+                <span class="eur">€ <span id="eurDisplay">5000.00</span></span>
+                <span class="power">⚡ <span id="powerDisplay">0</span> W</span>
+                <span class="battery">🔋 <span id="batteryDisplay">0</span> Wh</span>
+                <span class="hash">⚡ <span id="hashDisplay">0</span> TH/s</span>
+                <span class="time">⏱️ <span id="timeDisplay">Tag 1</span></span>
+                <span class="status" id="statusDisplay">✅ Aktiv</span>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs" id="tabContainer">
+            <button class="tab-btn active" data-tab="server">🏭 Mining Rigs</button>
+            <button class="tab-btn" data-tab="shop">🛒 Shop</button>
+            <button class="tab-btn" data-tab="dealer">📈 Händler</button>
+            <button class="tab-btn" data-tab="finance">💰 Finanzen</button>
+        </div>
+
+        <!-- ===== SERVER TAB ===== -->
+        <div class="tab-content active" id="tab-server">
+            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+                <h3>Mining Rigs · <span id="minerCount">0</span> aktiv</h3>
+                <span class="badge">Max. 6 Rigs</span>
+                <span class="power-total">⚡ <span id="solarCount">0</span> Solaranlagen</span>
+                <span class="power-total">🔋 <span id="batteryPercent">0</span>%</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+                <div class="game-clock">
+                    <div class="date-box">📅 <strong id="gameDateDisplay">01.01.2026</strong></div>
+                    <div class="time-box">⏱️ <strong id="gameTimeDisplay">00:00</strong></div>
+                    <span class="speed-label" id="speedLabel">5x</span>
+                </div>
+                <div class="speed-controls">
+                    <label>⏩ Geschwindigkeit:</label>
+                    <button class="speed-btn" data-speed="1">1x</button>
+                    <button class="speed-btn active" data-speed="5">5x</button>
+                    <button class="speed-btn" data-speed="10">10x</button>
+                    <button class="speed-btn" data-speed="30">30x</button>
+                    <button class="speed-btn" data-speed="60">60x</button>
+                </div>
+            </div>
+
+            <div class="weather-forecast">
+                <div class="weather-info">
+                    <span class="weather-icon" id="weatherIcon">☀️</span>
+                    <div>
+                        <div style="font-weight:600; font-size:18px;" id="weatherText">Sonnig</div>
+                        <div class="weather-detail">
+                            Produktion: <strong id="weatherProduction">100%</strong> ·
+                            Wechsel in: <strong id="weatherChangeIn">~3h</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="weather-detail" style="text-align:right;">
+                    <div>☀️ Sonnig: <span id="weatherSunny">0%</span></div>
+                    <div>⛅ Bewölkt: <span id="weatherCloudy">0%</span></div>
+                    <div>🌧️ Regen: <span id="weatherRainy">0%</span></div>
+                    <div>🌙 Nacht: <span id="weatherNight">0%</span></div>
+                </div>
+            </div>
+
+            <div class="start-hint">
+                🚀 <strong>Du startest mit:</strong> 1x AvalonMiner A1166 Pro + 1x Kleine Solaranlage 5 kWp (inkl. 5 kWh Speicher)
+            </div>
+
+            <div class="costs">
+                <span><span class="label">🏠 Miete (monatlich):</span> <span class="value red" id="rentCost">€0</span></span>
+                <span><span class="label">🔧 Wartung (monatlich):</span> <span class="value red" id="maintenanceCost">€0</span></span>
+                <span><span class="label">💰 Steuern (25%):</span> <span class="value red" id="taxCost">€0</span></span>
+                <span><span class="label">📈 Difficulty:</span> <span class="value" id="difficultyDisplay">1.00x</span></span>
+            </div>
+
+            <div class="solar-info">
+                <div class="row">
+                    <span class="label">☀️ Solarproduktion (aktuell):</span>
+                    <span class="value green" id="solarProduction">0 W</span>
+                </div>
+                <div class="row">
+                    <span class="label">⚡ Stromverbrauch (Rigs + Kühlung):</span>
+                    <span class="value yellow" id="powerConsumption">0 W</span>
+                </div>
+                <div class="row">
+                    <span class="label">🔋 Batteriestand:</span>
+                    <span class="value" id="batteryStatus">0 Wh</span>
+                </div>
+                <div class="battery-bar">
+                    <div class="battery-fill" id="batteryFill" style="width:0%"></div>
+                </div>
+                <div class="row" style="margin-top:8px;">
+                    <span class="label">Status:</span>
+                    <span class="value" id="powerStatusText">⏸️ Bereit</span>
+                </div>
+            </div>
+
+            <div class="profit">
+                <span>💰 Täglicher Ertrag: <span id="dailyProfit" style="color:#f7931a;">0.00</span> €</span>
+                <span>⚡ Stromkosten/Tag: <span id="dailyCost" style="color:#ff6b6b;">0.00</span> €</span>
+                <span>📈 Netto/Tag: <span id="dailyNet" style="color:#81c784;">0.00</span> €</span>
+                <span>📊 Monatlicher Gewinn: <span id="monthlyProfit" style="color:#4fc3f7;">0.00</span> €</span>
+            </div>
+
+            <div class="miner-grid" id="minerGrid"></div>
+            <div class="hint" id="powerHint">💡 ASIC-Miner sind spezialisierte Geräte für Bitcoin-Mining. Sie sind laut, stromhungrig und teuer - aber extrem effizient.</div>
+        </div>
+
+        <!-- ===== SHOP TAB ===== -->
+        <div class="tab-content" id="tab-shop">
+            <h3>🛒 Komponenten kaufen <span class="price-update">(Preise: Juni 2026)</span></h3>
+            <div id="shopList"></div>
+        </div>
+
+        <!-- ===== DEALER TAB ===== -->
+        <div class="tab-content" id="tab-dealer">
+            <h3>📊 Händler <span class="price-update">(2% Transaktionsgebühr · Nur ganze Bitcoins)</span></h3>
+
+            <!-- Aktueller Gesamtkurs -->
+            <div style="background:#1a2432; border-radius:12px; padding:15px; margin-bottom:15px; border:1px solid #2a3648; text-align:center;">
+                <div style="font-size:14px; color:#8899b3;">Aktueller Bitcoin-Kurs (Durchschnitt)</div>
+                <div style="font-size:36px; font-weight:700; color:#f7931a;" id="avgRateDisplay">€0.00</div>
+                <div style="font-size:13px; color:#8899b3;">Stand: <span id="rateTimeDisplay">--</span></div>
+            </div>
+
+            <div class="dealer-grid" id="dealerGrid"></div>
+            <div class="timer" id="dealerTimer">⏳ Nächster Kurswechsel in: --</div>
+
+            <!-- Kurs-Historie -->
+            <div class="dealer-history">
+                <h3>📈 Kurs-Historie (letzte 10 Wechsel)</h3>
+                <div class="history-grid" id="rateHistory"></div>
+            </div>
+
+            <div style="margin-top:15px; padding:12px; background:#1a2432; border-radius:12px; border:1px solid #2a3648;">
+                <p style="color:#8899b3; font-size:13px;">💡 <strong>Tipp:</strong> Du kannst nur <strong>ganze Bitcoins</strong> verkaufen. Gib die Anzahl ein und sieh sofort wie viel Euro du dafür bekommst.</p>
+            </div>
+        </div>
+
+        <!-- ===== FINANZEN TAB ===== -->
+        <div class="tab-content" id="tab-finance">
+            <h3>💰 Finanzübersicht <span class="price-update">(Zahlungen immer am 1. des Monats)</span></h3>
+
+            <div class="finance-summary" id="financeSummary">
+                <div class="item">
+                    <div class="label">💶 Kontostand</div>
+                    <div class="value green" id="financeBalance">€0.00</div>
+                </div>
+                <div class="item">
+                    <div class="label">📅 Nächste Zahlung</div>
+                    <div class="value yellow" id="financeNextDate">--</div>
+                </div>
+                <div class="item">
+                    <div class="label">⏳ Noch</div>
+                    <div class="value yellow" id="financeCountdown">--</div>
+                </div>
+                <div class="item">
+                    <div class="label">💰 Monatliche Gesamtkosten</div>
+                    <div class="value red" id="financeTotalCosts">€0.00</div>
+                </div>
+            </div>
+
+            <div class="finance-grid">
+                <div class="finance-card">
+                    <h3>🏠 Miete</h3>
+                    <div class="row"><span class="label">Betrag</span><span class="value red" id="financeRentAmount">€0.00</span></div>
+                    <div class="row"><span class="label">Zahlungsintervall</span><span class="value">Monatlich (1.)</span></div>
+                    <div class="row"><span class="label">Nächste Zahlung</span><span class="value yellow" id="financeRentNext">--</span></div>
+                    <div class="next-payment">
+                        <div class="label">⏳ Countdown</div>
+                        <div class="countdown" id="financeRentCountdown">--</div>
+                    </div>
+                </div>
+                <div class="finance-card">
+                    <h3>🛡️ Versicherung</h3>
+                    <div class="row"><span class="label">Betrag</span><span class="value red" id="financeInsuranceAmount">€0.00</span></div>
+                    <div class="row"><span class="label">Zahlungsintervall</span><span class="value">Monatlich (1.)</span></div>
+                    <div class="row"><span class="label">Nächste Zahlung</span><span class="value yellow" id="financeInsuranceNext">--</span></div>
+                    <div class="next-payment">
+                        <div class="label">⏳ Countdown</div>
+                        <div class="countdown" id="financeInsuranceCountdown">--</div>
+                    </div>
+                </div>
+                <div class="finance-card">
+                    <h3>⚡ Strom</h3>
+                    <div class="row"><span class="label">Betrag (monatlich)</span><span class="value red" id="financePowerAmount">€0.00</span></div>
+                    <div class="row"><span class="label">Verbrauch (Ø)</span><span class="value yellow" id="financePowerUsage">0 W</span></div>
+                    <div class="row"><span class="label">Nächste Zahlung</span><span class="value yellow" id="financePowerNext">--</span></div>
+                    <div class="next-payment">
+                        <div class="label">⏳ Countdown</div>
+                        <div class="countdown" id="financePowerCountdown">--</div>
+                    </div>
+                </div>
+                <div class="finance-card">
+                    <h3>🔧 Wartung</h3>
+                    <div class="row"><span class="label">Betrag</span><span class="value red" id="financeMaintenanceAmount">€0.00</span></div>
+                    <div class="row"><span class="label">Zahlungsintervall</span><span class="value">Monatlich (1.)</span></div>
+                    <div class="row"><span class="label">Nächste Zahlung</span><span class="value yellow" id="financeMaintenanceNext">--</span></div>
+                    <div class="next-payment">
+                        <div class="label">⏳ Countdown</div>
+                        <div class="countdown" id="financeMaintenanceCountdown">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background:#1a2432; border-radius:12px; padding:15px; margin-top:20px; border:1px solid #2a3648;">
+                <h3 style="color:#b0c4de; margin-bottom:10px;">📜 Zahlungshistorie</h3>
+                <div id="paymentHistory" style="max-height:200px; overflow-y:auto;">
+                    <div style="color:#8899b3; text-align:center; padding:20px;">Noch keine Zahlungen</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== FOOTER ===== -->
+        <div class="footer">
+            <button class="reset-btn" id="resetBtn">🔄 Neustart</button>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <span style="color:#8899b3; font-size:13px;">⚡ 1 Sekunde = <span id="timeSpeedDisplay" style="color:#ffd54f; font-weight:600;">5</span> Sekunden im Spiel</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  DATEN
+        // ============================================================
+        const ASIC_MINERS = [
+            { name: 'AvalonMiner A1166 Pro', price: 1500, hash: 68, power: 3260, efficiency: 48.0, noise: '72 dB',
+                desc: '68 TH/s · 3260W · Canaan' },
+            { name: 'AvalonMiner A1266', price: 2200, hash: 90, power: 3420, efficiency: 38.0, noise: '72 dB',
+                desc: '90 TH/s · 3420W · Canaan' },
+            { name: 'Whatsminer M50S', price: 2800, hash: 126, power: 3276, efficiency: 26.0, noise: '72 dB',
+                desc: '126 TH/s · 3276W · MicroBT' },
+            { name: 'Antminer S19 XP', price: 3500, hash: 140, power: 3010, efficiency: 21.5, noise: '75 dB',
+                desc: '140 TH/s · 3010W · Bitmain' },
+            { name: 'Whatsminer M60', price: 4800, hash: 280, power: 3300, efficiency: 11.8, noise: '72 dB',
+                desc: '280 TH/s · 3300W · MicroBT' },
+            { name: 'Antminer S21 Hydro', price: 6500, hash: 335, power: 5360, efficiency: 16.0, noise: '65 dB (Hydro)',
+                desc: '335 TH/s · 5360W · Bitmain' }
+        ];
+
+        const SOLAR_SYSTEMS = [
+            { name: 'Kleine Anlage 5 kWp', price: 10300, power: 5000, battery: 5000,
+            desc: '5 kWp · 5 kWh Speicher · für kleines Dach' },
+            { name: 'Mittel 8 kWp + Speicher', price: 19000, power: 8000, battery: 10000,
+                desc: '8 kWp · 10 kWh Speicher · für EFH' },
+            { name: 'Groß 10 kWp + Speicher', price: 20300, power: 10000, battery: 15000,
+                desc: '10 kWp · 15 kWh Speicher · für großes Dach' },
+            { name: 'Profi 15 kWp + Speicher', price: 28000, power: 15000, battery: 20000,
+                desc: '15 kWp · 20 kWh Speicher · für Gewerbe' }
+        ];
+
+        const SERVER_UPGRADE = { name: 'Mining-Farm Erweiterung', price: 800, desc: '+1 Rig-Slot (max. 6)' };
+
+        const WEATHER_TYPES = [
+            { id: 'sunny', icon: '☀️', label: 'Sonnig', production: 1.0, minDuration: 4, maxDuration: 8 },
+            { id: 'cloudy', icon: '⛅', label: 'Bewölkt', production: 0.5, minDuration: 2, maxDuration: 6 },
+            { id: 'rainy', icon: '🌧️', label: 'Regen', production: 0.15, minDuration: 1, maxDuration: 4 },
+            { id: 'night', icon: '🌙', label: 'Nacht', production: 0.0, minDuration: 6, maxDuration: 10 }
+        ];
+
+        const START_DATE = new Date(2026, 0, 1);
+
+        // ============================================================
+        //  STATE
+        // ============================================================
+        let state = {
+            btc: 0,
+            eur: 5000,
+            miners: [0],
+            solarSystems: [0],
+            battery: 5000,
+            maxMiners: 4,
+            dealerRates: [0, 0, 0, 0],
+            dealerTimer: 15 * 60,
+            lastTick: Date.now(),
+            difficulty: 1.0,
+            totalMined: 0,
+            weatherIndex: 0,
+            weatherTimer: 4 * 3600,
+            weatherHistory: [],
+            gameTime: 0,
+            speed: 5,
+            lastPaymentDay: 0,
+            paymentHistory: [],
+            rateHistory: []
+        };
+
+        const SAVE_KEY = 'btc_miner_final_v3';
+
+        // ============================================================
+        //  SPEICHERN / LADEN
+        // ============================================================
+        function saveGame() {
+            try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+        }
+
+        function loadGame() {
+            try {
+                const raw = localStorage.getItem(SAVE_KEY);
+                if (!raw) return false;
+                const data = JSON.parse(raw);
+                Object.assign(state, data);
+                if (!Array.isArray(state.miners)) state.miners = [];
+                if (!Array.isArray(state.solarSystems)) state.solarSystems = [];
+                if (!Array.isArray(state.weatherHistory)) state.weatherHistory = [];
+                if (!Array.isArray(state.paymentHistory)) state.paymentHistory = [];
+                if (!Array.isArray(state.rateHistory)) state.rateHistory = [];
+                return true;
+            } catch (e) { return false; }
+        }
+
+        // ============================================================
+        //  HILFSFUNKTIONEN
+        // ============================================================
+        function getTotalHash() {
+            let total = 0;
+            for (const idx of state.miners) total += ASIC_MINERS[idx].hash;
+            return total;
+        }
+
+        function getTotalPower() {
+            let total = 0;
+            for (const idx of state.miners) total += ASIC_MINERS[idx].power;
+            if (total > 0) total = total * 1.15;
+            return Math.round(total);
+        }
+
+        function getTotalProduction() {
+            let total = 0;
+            const weather = WEATHER_TYPES[state.weatherIndex];
+            for (const idx of state.solarSystems) {
+                total += SOLAR_SYSTEMS[idx].power * weather.production;
+            }
+            return Math.round(total);
+        }
+
+        function getTotalBattery() {
+            let total = 0;
+            for (const idx of state.solarSystems) total += SOLAR_SYSTEMS[idx].battery;
+            return total;
+        }
+
+        function getMinerCount() { return state.miners.length; }
+        function getSolarCount() { return state.solarSystems.length; }
+        function getWeather() { return WEATHER_TYPES[state.weatherIndex]; }
+
+        function getRentCost() { return getMinerCount() * 100 + 50; }
+
+        function getMaintenanceCost() {
+            let totalValue = 0;
+            for (const idx of state.miners) totalValue += ASIC_MINERS[idx].price;
+            return totalValue * 0.004;
+        }
+
+        function getInsuranceCost() {
+            let totalValue = 0;
+            for (const idx of state.miners) totalValue += ASIC_MINERS[idx].price;
+            return totalValue * 0.005;
+        }
+
+        function getPowerCost() {
+            const consumption = getTotalPower();
+            return (consumption * 24 * 30) / 1000 * 0.30;
+        }
+
+        function getTotalMonthlyCosts() {
+            return getRentCost() + getMaintenanceCost() + getInsuranceCost() + getPowerCost();
+        }
+
+        function getTaxOnProfit(profit) { return profit * 0.25; }
+
+        function getDifficultyMultiplier() { return state.difficulty; }
+
+        function getAverageRate() {
+            const valid = state.dealerRates.filter(r => r > 0);
+            if (valid.length === 0) return 40000;
+            return valid.reduce((a, b) => a + b, 0) / valid.length;
+        }
+
+        // ============================================================
+        //  SPIEL-ZEIT & DATUM
+        // ============================================================
+        function getGameDateTime(seconds) {
+            const totalSeconds = Math.floor(seconds);
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+            const date = new Date(START_DATE);
+            date.setDate(date.getDate() + days);
+
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+
+            return {
+                date: `${day}.${month}.${year}`,
+                time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
+                day: days + 1,
+                days: days,
+                hours: hours,
+                minutes: minutes,
+                full: `${day}.${month}.${year} ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+            };
+        }
+
+        // ============================================================
+        //  WETTER-LOGIK
+        // ============================================================
+        function getNextWeather(currentIndex) {
+            const weights = [0.4, 0.3, 0.2, 0.1];
+            let r = Math.random(),
+                cumulative = 0;
+            for (let i = 0; i < weights.length; i++) {
+                cumulative += weights[i];
+                if (r < cumulative) return i;
+            }
+            return 0;
+        }
+
+        function changeWeather() {
+            const current = state.weatherIndex;
+            let next;
+            do { next = getNextWeather(current); } while (next === current && Math.random() < 0.3);
+
+            const hours = (state.gameTime % 86400) / 3600;
+            if (hours < 6 || hours > 20) next = 3;
+
+            state.weatherIndex = next;
+            const weather = getWeather();
+            const duration = weather.minDuration + Math.random() * (weather.maxDuration - weather.minDuration);
+            state.weatherTimer = duration * 3600;
+            state.weatherHistory.push(weather.id);
+            if (state.weatherHistory.length > 100) state.weatherHistory.shift();
+        }
+
+        function getWeatherStats() {
+            const total = state.weatherHistory.length || 1;
+            const sunny = state.weatherHistory.filter(w => w === 'sunny').length / total;
+            const cloudy = state.weatherHistory.filter(w => w === 'cloudy').length / total;
+            const rainy = state.weatherHistory.filter(w => w === 'rainy').length / total;
+            const night = state.weatherHistory.filter(w => w === 'night').length / total;
+            return { sunny, cloudy, rainy, night };
+        }
+
+        // ============================================================
+        //  FINANZEN
+        // ============================================================
+        function processMonthlyPayments() {
+            const currentDay = Math.floor(state.gameTime / 86400);
+            const gameDate = getGameDateTime(state.gameTime);
+            const dayOfMonth = parseInt(gameDate.date.split('.')[0]);
+
+            if (dayOfMonth === 1 && currentDay > state.lastPaymentDay) {
+                const rent = getRentCost();
+                const maintenance = getMaintenanceCost();
+                const insurance = getInsuranceCost();
+                const power = getPowerCost();
+                const total = rent + maintenance + insurance + power;
+
+                if (state.eur >= total) {
+                    state.eur -= total;
+                } else {
+                    if (state.miners.length > 0) {
+                        const idx = state.miners.pop();
+                        state.eur += ASIC_MINERS[idx].price * 0.7;
+                    }
+                    state.eur = Math.max(0, state.eur - total);
+                }
+
+                state.paymentHistory.push({
+                    date: gameDate.full,
+                    rent: rent,
+                    maintenance: maintenance,
+                    insurance: insurance,
+                    power: power,
+                    total: total
+                });
+
+                state.lastPaymentDay = currentDay;
+                if (state.paymentHistory.length > 24) state.paymentHistory.shift();
+                render();
+            }
+        }
+
+        // ============================================================
+        //  RENDER
+        // ============================================================
+        function render() {
+            renderStats();
+            renderMiners();
+            renderShop();
+            renderDealer();
+            renderFinance();
+            saveGame();
+        }
+
+        // ============================================================
+        //  RENDER STATS
+        // ============================================================
+        function renderStats() {
+            const production = getTotalProduction();
+            const consumption = getTotalPower();
+            const totalHash = getTotalHash() / getDifficultyMultiplier();
+            const solarCount = getSolarCount();
+            const totalBattery = getTotalBattery();
+            const batteryPercent = totalBattery > 0 ? Math.round((state.battery / totalBattery) * 100) : 0;
+            const minerCount = getMinerCount();
+            const weather = getWeather();
+            const gameTime = getGameDateTime(state.gameTime);
+
+            document.getElementById('btcDisplay').textContent = state.btc.toFixed(4);
+            document.getElementById('eurDisplay').textContent = state.eur.toFixed(2);
+            document.getElementById('powerDisplay').textContent = `${production}W / ${consumption}W`;
+            document.getElementById('batteryDisplay').textContent = Math.round(state.battery);
+            document.getElementById('hashDisplay').textContent = Math.round(totalHash);
+            document.getElementById('solarCount').textContent = solarCount;
+            document.getElementById('batteryPercent').textContent = batteryPercent;
+            document.getElementById('minerCount').textContent = minerCount;
+            document.getElementById('timeDisplay').textContent = `Tag ${gameTime.day}`;
+
+            document.getElementById('gameDateDisplay').textContent = gameTime.date;
+            document.getElementById('gameTimeDisplay').textContent = gameTime.time;
+            document.getElementById('timeSpeedDisplay').textContent = state.speed;
+            document.getElementById('speedLabel').textContent = state.speed + 'x';
+
+            document.getElementById('weatherIcon').textContent = weather.icon;
+            document.getElementById('weatherText').textContent = weather.label;
+            document.getElementById('weatherProduction').textContent = Math.round(weather.production * 100) + '%';
+            const remaining = Math.max(0, Math.round(state.weatherTimer / 3600));
+            document.getElementById('weatherChangeIn').textContent = `~${remaining}h`;
+
+            const stats = getWeatherStats();
+            document.getElementById('weatherSunny').textContent = Math.round(stats.sunny * 100) + '%';
+            document.getElementById('weatherCloudy').textContent = Math.round(stats.cloudy * 100) + '%';
+            document.getElementById('weatherRainy').textContent = Math.round(stats.rainy * 100) + '%';
+            document.getElementById('weatherNight').textContent = Math.round(stats.night * 100) + '%';
+
+            document.getElementById('rentCost').textContent = `€${getRentCost().toFixed(2)}`;
+            document.getElementById('maintenanceCost').textContent = `€${getMaintenanceCost().toFixed(2)}`;
+            document.getElementById('difficultyDisplay').textContent = `${getDifficultyMultiplier().toFixed(2)}x`;
+
+            document.getElementById('solarProduction').textContent = `${production} W`;
+            document.getElementById('powerConsumption').textContent = `${consumption} W`;
+            document.getElementById('batteryStatus').textContent = `${Math.round(state.battery)} Wh / ${totalBattery} Wh`;
+            document.getElementById('batteryFill').style.width = `${batteryPercent}%`;
+
+            const powerStatus = document.getElementById('powerStatusText');
+            if (production === 0 && consumption === 0) {
+                powerStatus.textContent = '⏸️ Keine Solaranlage und keine Miner';
+                powerStatus.style.color = '#8899b3';
+            } else if (production === 0) {
+                powerStatus.textContent = `⛔ Keine Solarproduktion! (${weather.label})`;
+                powerStatus.style.color = '#ff6b6b';
+            } else if (state.battery > 0 && consumption > production) {
+                powerStatus.textContent = `🔋 Batterie wird entladen (${weather.label})`;
+                powerStatus.style.color = '#ffd54f';
+            } else if (production >= consumption && consumption > 0) {
+                powerStatus.textContent = `☀️ Solar deckt den Bedarf (${weather.label})`;
+                powerStatus.style.color = '#81c784';
+            } else if (consumption === 0) {
+                powerStatus.textContent = `☀️ Solar produziert Strom (${weather.label})`;
+                powerStatus.style.color = '#4fc3f7';
+            } else {
+                powerStatus.textContent = `⚠️ Batterie leer! (${weather.label})`;
+                powerStatus.style.color = '#ff6b6b';
+            }
+
+            const statusEl = document.getElementById('statusDisplay');
+            if (production === 0 && minerCount === 0) {
+                statusEl.textContent = '⏸️ Keine Aktivität';
+                statusEl.style.color = '#8899b3';
+            } else if (production === 0) {
+                statusEl.textContent = `⛔ Kein Strom (${weather.label})`;
+                statusEl.style.color = '#ff6b6b';
+            } else if (state.battery === 0 && consumption > production) {
+                statusEl.textContent = `⛔ Batterie leer (${weather.label})`;
+                statusEl.style.color = '#ff6b6b';
+            } else if (totalHash > 0 && (production >= consumption || state.battery > 0)) {
+                statusEl.textContent = `✅ Mining aktiv (${weather.label})`;
+                statusEl.style.color = '#81c784';
+            } else if (minerCount === 0) {
+                statusEl.textContent = '⏸️ Keine aktiven Miner';
+                statusEl.style.color = '#8899b3';
+            } else {
+                statusEl.textContent = '⏸️ Bereit';
+                statusEl.style.color = '#8899b3';
+            }
+
+            const effectiveHash = getTotalHash() / getDifficultyMultiplier();
+            const dailyBtc = effectiveHash * 0.0000005;
+            const dailyRevenue = dailyBtc * getAverageRate();
+            const dailyPowerCost = (consumption * 24) / 1000 * 0.30;
+            const dailyNet = dailyRevenue - dailyPowerCost;
+            const monthlyNet = dailyNet * 30 - getTotalMonthlyCosts();
+            const tax = getTaxOnProfit(monthlyNet > 0 ? monthlyNet : 0);
+
+            document.getElementById('dailyProfit').textContent = dailyRevenue.toFixed(2);
+            document.getElementById('dailyCost').textContent = dailyPowerCost.toFixed(2);
+            document.getElementById('dailyNet').textContent = dailyNet.toFixed(2);
+            document.getElementById('monthlyProfit').textContent = (monthlyNet - tax).toFixed(2);
+            document.getElementById('taxCost').textContent = `€${tax.toFixed(2)}`;
+
+            const hint = document.getElementById('powerHint');
+            if (production === 0) {
+                hint.innerHTML = `⚠️ <span class="warning">Keine Solarproduktion! (${weather.label}) Batterie wird entladen.</span>`;
+            } else if (state.battery === 0 && consumption > production) {
+                hint.innerHTML =
+                    `⚠️ <span class="warning">Batterie leer! ${consumption}W benötigt, nur ${production}W produziert. (${weather.label})</span>`;
+            } else {
+                hint.innerHTML =
+                    `☀️ Solarproduktion: ${production}W · Verbrauch: ${consumption}W · Batterie: ${Math.round(state.battery)}Wh / ${totalBattery}Wh · Wetter: ${weather.icon} ${weather.label}`;
+            }
+        }
+
+        // ============================================================
+        //  RENDER MINERS
+        // ============================================================
+        function renderMiners() {
+            const grid = document.getElementById('minerGrid');
+            grid.innerHTML = '';
+            const production = getTotalProduction();
+
+            for (let i = 0; i < state.maxMiners; i++) {
+                const hasMiner = i < state.miners.length;
+                const card = document.createElement('div');
+
+                if (hasMiner) {
+                    const idx = state.miners[i];
+                    const miner = ASIC_MINERS[idx];
+                    const hasPower = production > 0 || state.battery > 0;
+                    let statusClass = hasPower ? 'online' : 'offline';
+                    let statusText = hasPower ? '✅ Aktiv' : '⛔ Kein Strom';
+
+                    card.className = `miner-card ${statusClass}`;
+                    card.innerHTML = `
+                        <h3>🖥️ ${miner.name}</h3>
+                        <div class="parts">${miner.desc}</div>
+                        <div class="info">⚡ ${miner.hash} TH/s · ${miner.power}W · ${miner.noise}</div>
+                        <div class="info">Effizienz: ${miner.efficiency} J/TH</div>
+                        <div class="status-badge ${statusClass}">${statusText}</div>
+                    `;
+                } else {
+                    card.className = 'miner-card empty';
+                    card.innerHTML = `
+                        <h3>🖥️ Slot #${i+1}</h3>
+                        <div class="parts">❌ Leer</div>
+                        <div class="info">Kaufe einen ASIC-Miner im Shop</div>
+                    `;
+                }
+                grid.appendChild(card);
+            }
+        }
+
+        // ============================================================
+        //  RENDER SHOP
+        // ============================================================
+        function renderShop() {
+            const container = document.getElementById('shopList');
+            container.innerHTML = '';
+
+            const minerCategory = document.createElement('div');
+            minerCategory.className = 'shop-category';
+            minerCategory.innerHTML = '<span class="cat-icon">🖥️</span> ASIC Miner';
+            container.appendChild(minerCategory);
+
+            for (let i = 0; i < ASIC_MINERS.length; i++) {
+                const miner = ASIC_MINERS[i];
+                const div = document.createElement('div');
+                div.className = 'shop-item';
+                div.style.borderLeftColor = '#ce93d8';
+                const canBuy = state.eur >= miner.price && state.miners.length < state.maxMiners;
+                div.innerHTML = `
+                    <div class="desc">
+                        <strong>🖥️ ${miner.name}</strong>
+                        <small>${miner.desc} · ${miner.hash} TH/s · ${miner.power}W</small>
+                    </div>
+                    <span>€${miner.price.toLocaleString()}</span>
+                    <button ${canBuy ? '' : 'disabled'} data-buy="miner" data-idx="${i}">Kaufen</button>
+                `;
+                container.appendChild(div);
+            }
+
+            const solarCategory = document.createElement('div');
+            solarCategory.className = 'shop-category';
+            solarCategory.innerHTML = '<span class="cat-icon">☀️</span> Solaranlagen (inkl. Speicher)';
+            container.appendChild(solarCategory);
+
+            for (let i = 0; i < SOLAR_SYSTEMS.length; i++) {
+                const system = SOLAR_SYSTEMS[i];
+                const div = document.createElement('div');
+                div.className = 'shop-item';
+                div.style.borderLeftColor = '#ffd54f';
+                const disabled = state.eur < system.price;
+                div.innerHTML = `
+                    <div class="desc">
+                        <strong>☀️ ${system.name}</strong>
+                        <small>${system.desc} · ${system.power}W · ${system.battery}Wh</small>
+                    </div>
+                    <span>€${system.price.toLocaleString()}</span>
+                    <button ${disabled ? 'disabled' : ''} data-buy="solar" data-idx="${i}">Kaufen</button>
+                `;
+                container.appendChild(div);
+            }
+
+            const serverCategory = document.createElement('div');
+            serverCategory.className = 'shop-category';
+            serverCategory.innerHTML = '<span class="cat-icon">🏗️</span> Mining-Farm Erweiterung';
+            container.appendChild(serverCategory);
+
+            const upgradeDiv = document.createElement('div');
+            upgradeDiv.className = 'shop-item';
+            upgradeDiv.style.borderLeftColor = '#4fc3f7';
+            const upgradeDisabled = state.eur < SERVER_UPGRADE.price || state.maxMiners >= 6;
+            upgradeDiv.innerHTML = `
+                <div class="desc">
+                    <strong>🏗️ ${SERVER_UPGRADE.name}</strong>
+                    <small>${SERVER_UPGRADE.desc}</small>
+                </div>
+                <span>€${SERVER_UPGRADE.price}</span>
+                <button ${upgradeDisabled ? 'disabled' : ''} data-buy="upgrade">Kaufen</button>
+            `;
+            container.appendChild(upgradeDiv);
+
+            container.querySelectorAll('button[data-buy]').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const type = this.dataset.buy;
+                    if (type === 'miner') { const idx = parseInt(this.dataset.idx);
+                        buyMiner(idx); } else if (type === 'solar') { const idx = parseInt(this.dataset.idx);
+                        buySolarSystem(idx); } else if (type === 'upgrade') { buyUpgrade(); }
+                });
+            });
+        }
+
+        // ============================================================
+        //  RENDER DEALER
+        // ============================================================
+        function renderDealer() {
+            const grid = document.getElementById('dealerGrid');
+            grid.innerHTML = '';
+
+            const avgRate = getAverageRate();
+            document.getElementById('avgRateDisplay').textContent = `€${avgRate.toFixed(2)}`;
+            const gameTime = getGameDateTime(state.gameTime);
+            document.getElementById('rateTimeDisplay').textContent = gameTime.full;
+
+            for (let i = 0; i < 4; i++) {
+                const rate = state.dealerRates[i] || 0;
+                const card = document.createElement('div');
+                card.className = 'dealer-card';
+
+                // Kursänderung berechnen
+                const prevRate = state.dealerRates[i] || rate;
+                const change = rate - prevRate;
+                const changeClass = change >= 0 ? 'up' : 'down';
+                const changeSign = change >= 0 ? '+' : '';
+
+                card.innerHTML = `
+                    <h4>🏦 Händler ${i+1}</h4>
+                    <div class="rate">€${rate.toFixed(2)}</div>
+                    <div class="rate-change ${changeClass}">${changeSign}${change.toFixed(2)} €</div>
+                    <div class="fee">2% Gebühr · €${(rate * 0.02).toFixed(2)} pro BTC</div>
+
+                    <div class="btc-amount">
+                        <label>Bitcoin:</label>
+                        <input type="number" min="0" step="1" value="1" id="btcAmount_${i}">
+                        <button class="max-btn" data-dealer="${i}">Max</button>
+                    </div>
+
+                    <div class="preview" id="preview_${i}">
+                        <div class="row">
+                            <span class="label">Bitcoin</span>
+                            <span class="value" id="previewBtc_${i}">1.00 BTC</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Kurs</span>
+                            <span class="value">€${rate.toFixed(2)}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Gebühr (2%)</span>
+                            <span class="value red" id="previewFee_${i}">-€${(rate * 0.02).toFixed(2)}</span>
+                        </div>
+                        <div class="total" id="previewTotal_${i}">= €${rate.toFixed(2)}</div>
+                    </div>
+
+                    <button class="sell-btn" data-dealer="${i}" id="sellBtn_${i}" disabled>
+                        Verkaufen
+                    </button>
+                    <div class="timer">Nächster Kurswechsel in: --</div>
+                `;
+
+                grid.appendChild(card);
+
+                // Event Listener für Input
+                const input = document.getElementById(`btcAmount_${i}`);
+                input.addEventListener('input', function() {
+                    updatePreview(i, rate);
+                });
+
+                // Max Button
+                const maxBtn = card.querySelector('.max-btn');
+                maxBtn.addEventListener('click', function() {
+                    const maxBtc = Math.floor(state.btc);
+                    input.value = Math.max(0, maxBtc);
+                    updatePreview(i, rate);
+                });
+
+                // Sell Button
+                const sellBtn = document.getElementById(`sellBtn_${i}`);
+                sellBtn.addEventListener('click', function() {
+                    const amount = parseInt(document.getElementById(`btcAmount_${i}`).value) || 0;
+                    if (amount > 0 && amount <= Math.floor(state.btc)) {
+                        const fee = rate * 0.02;
+                        const netRate = rate - fee;
+                        const total = amount * netRate;
+
+                        if (confirm(`💰 Verkauf bestätigen?\n\n` +
+                                `📊 ${amount} BTC × €${netRate.toFixed(2)} = €${total.toFixed(2)}\n` +
+                                `📉 Gebühr: €${(amount * fee).toFixed(2)}`)) {
+                            state.btc -= amount;
+                            state.eur += total;
+                            render();
+                        }
+                    }
+                });
+
+                // Initial Preview
+                updatePreview(i, rate);
+            }
+
+            // Rate History
+            const historyContainer = document.getElementById('rateHistory');
+            historyContainer.innerHTML = '';
+            const history = state.rateHistory.slice(-10);
+            if (history.length === 0) {
+                historyContainer.innerHTML = '<div style="color:#8899b3; text-align:center; padding:10px;">Noch keine Kursdaten</div>';
+            } else {
+                for (const entry of history) {
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.innerHTML = `
+                        <div>${entry.time}</div>
+                        <div class="price">€${entry.rate.toFixed(0)}</div>
+                    `;
+                    historyContainer.appendChild(div);
+                }
+            }
+
+            updateTimer();
+        }
+
+        function updatePreview(dealerIdx, rate) {
+            const input = document.getElementById(`btcAmount_${dealerIdx}`);
+            let amount = parseInt(input.value) || 0;
+            const maxBtc = Math.floor(state.btc);
+            if (amount > maxBtc) amount = maxBtc;
+            if (amount < 0) amount = 0;
+
+            const fee = rate * 0.02;
+            const netRate = rate - fee;
+            const total = amount * netRate;
+
+            document.getElementById(`previewBtc_${dealerIdx}`).textContent = `${amount.toFixed(0)} BTC`;
+            document.getElementById(`previewFee_${dealerIdx}`).textContent = `-€${(amount * fee).toFixed(2)}`;
+            document.getElementById(`previewTotal_${dealerIdx}`).textContent = `= €${total.toFixed(2)}`;
+
+            const sellBtn = document.getElementById(`sellBtn_${dealerIdx}`);
+            sellBtn.disabled = amount === 0 || amount > maxBtc || state.btc === 0;
+        }
+
+        // ============================================================
+        //  RENDER FINANCE
+        // ============================================================
+        function renderFinance() {
+            const gameTime = getGameDateTime(state.gameTime);
+            const rent = getRentCost();
+            const maintenance = getMaintenanceCost();
+            const insurance = getInsuranceCost();
+            const power = getPowerCost();
+            const total = rent + maintenance + insurance + power;
+
+            const currentDate = new Date(START_DATE);
+            currentDate.setDate(currentDate.getDate() + gameTime.days);
+            const nextPaymentDate = new Date(currentDate);
+            nextPaymentDate.setDate(1);
+            nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+
+            const daysUntilPayment = Math.ceil((nextPaymentDate - currentDate) / (1000 * 60 * 60 * 24));
+            const nextDateStr = nextPaymentDate.toLocaleDateString('de-DE', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+
+            document.getElementById('financeBalance').textContent = `€${state.eur.toFixed(2)}`;
+            document.getElementById('financeNextDate').textContent = nextDateStr;
+            document.getElementById('financeCountdown').textContent = `${daysUntilPayment} Tage`;
+            document.getElementById('financeTotalCosts').textContent = `€${total.toFixed(2)}`;
+
+            document.getElementById('financeRentAmount').textContent = `€${rent.toFixed(2)}`;
+            document.getElementById('financeRentNext').textContent = nextDateStr;
+            document.getElementById('financeRentCountdown').textContent = `${daysUntilPayment} Tage`;
+
+            document.getElementById('financeInsuranceAmount').textContent = `€${insurance.toFixed(2)}`;
+            document.getElementById('financeInsuranceNext').textContent = nextDateStr;
+            document.getElementById('financeInsuranceCountdown').textContent = `${daysUntilPayment} Tage`;
+
+            document.getElementById('financePowerAmount').textContent = `€${power.toFixed(2)}`;
+            document.getElementById('financePowerUsage').textContent = `${getTotalPower()} W`;
+            document.getElementById('financePowerNext').textContent = nextDateStr;
+            document.getElementById('financePowerCountdown').textContent = `${daysUntilPayment} Tage`;
+
+            document.getElementById('financeMaintenanceAmount').textContent = `€${maintenance.toFixed(2)}`;
+            document.getElementById('financeMaintenanceNext').textContent = nextDateStr;
+            document.getElementById('financeMaintenanceCountdown').textContent = `${daysUntilPayment} Tage`;
+
+            const historyContainer = document.getElementById('paymentHistory');
+            historyContainer.innerHTML = '';
+            if (state.paymentHistory.length === 0) {
+                historyContainer.innerHTML = '<div style="color:#8899b3; text-align:center; padding:20px;">Noch keine Zahlungen</div>';
+            } else {
+                const sorted = [...state.paymentHistory].reverse();
+                for (const entry of sorted) {
+                    const div = document.createElement('div');
+                    div.className = 'entry';
+                    div.innerHTML = `
+                        <span class="date">${entry.date}</span>
+                        <span>🏠 €${entry.rent.toFixed(2)}</span>
+                        <span>🛡️ €${entry.insurance.toFixed(2)}</span>
+                        <span>⚡ €${entry.power.toFixed(2)}</span>
+                        <span>🔧 €${entry.maintenance.toFixed(2)}</span>
+                        <span class="amount red">-€${entry.total.toFixed(2)}</span>
+                    `;
+                    historyContainer.appendChild(div);
+                }
+            }
+        }
+
+        // ============================================================
+        //  UPDATE TIMER
+        // ============================================================
+        function updateTimer() {
+            const el = document.getElementById('dealerTimer');
+            if (!el) return;
+            const remaining = Math.max(0, Math.floor((state.dealerTimer - (Date.now() - state.lastTick) / 1000 * state
+            .speed) / 60));
+            if (remaining <= 0) el.textContent = '⏳ Kurswechsel jetzt!';
+            else el.textContent = `⏳ Nächster Kurswechsel in ~${remaining} min`;
+
+            // Update dealer timers
+            document.querySelectorAll('.dealer-card .timer').forEach((timer, idx) => {
+                if (remaining <= 0) timer.textContent = '⏳ Kurswechsel jetzt!';
+                else timer.textContent = `⏳ Nächster Kurswechsel in ~${remaining} min`;
+            });
+        }
+
+        // ============================================================
+        //  SPIEL-LOGIK
+        // ============================================================
+        function buyMiner(idx) {
+            const miner = ASIC_MINERS[idx];
+            if (state.eur < miner.price || state.miners.length >= state.maxMiners) return;
+            state.miners.push(idx);
+            state.eur -= miner.price;
+            render();
+        }
+
+        function buySolarSystem(idx) {
+            const system = SOLAR_SYSTEMS[idx];
+            if (state.eur < system.price) return;
+            state.solarSystems.push(idx);
+            state.battery += system.battery;
+            state.eur -= system.price;
+            render();
+        }
+
+        function buyUpgrade() {
+            if (state.eur < SERVER_UPGRADE.price || state.maxMiners >= 6) return;
+            state.maxMiners += 1;
+            state.eur -= SERVER_UPGRADE.price;
+            render();
+        }
+
+        function generateRates() {
+            const oldRates = [...state.dealerRates];
+            for (let i = 0; i < 4; i++) {
+                state.dealerRates[i] = Math.round((40000 + Math.random() * 35000) * 100) / 100;
+            }
+
+            // Historie speichern
+            const gameTime = getGameDateTime(state.gameTime);
+            const avgRate = getAverageRate();
+            state.rateHistory.push({
+                time: gameTime.full,
+                rate: avgRate,
+                rates: [...state.dealerRates]
+            });
+            if (state.rateHistory.length > 20) state.rateHistory.shift();
+        }
+
+        // ============================================================
+        //  STROM & BATTERIE
+        // ============================================================
+        function powerTick() {
+            const production = getTotalProduction();
+            const consumption = getTotalPower();
+            const totalBattery = getTotalBattery();
+
+            const productionPerSecond = production / 3600;
+            const consumptionPerSecond = consumption / 3600;
+
+            if (production >= consumption) {
+                state.battery = Math.min(totalBattery, state.battery + productionPerSecond - consumptionPerSecond);
+            } else {
+                state.battery = Math.max(0, state.battery - (consumptionPerSecond - productionPerSecond));
+            }
+
+            const hasPower = (production >= consumption) || state.battery > 0;
+
+            if (hasPower && getTotalHash() > 0 && state.miners.length > 0) {
+                const hash = getTotalHash();
+                const difficulty = getDifficultyMultiplier();
+                const mined = (hash / difficulty) * 0.0000002;
+                state.btc += mined;
+                state.totalMined += mined;
+            }
+        }
+
+        // ============================================================
+        //  DIFFICULTY UPDATE
+        // ============================================================
+        function updateDifficulty() {
+            state.difficulty = state.difficulty * (1 + (0.02 + Math.random() * 0.03));
+        }
+
+        // ============================================================
+        //  TICK
+        // ============================================================
+        let tickCounter = 0;
+
+        function tick() {
+            const speed = state.speed;
+
+            for (let i = 0; i < speed; i++) {
+                state.gameTime += 1;
+                powerTick();
+
+                if (state.weatherTimer > 0) {
+                    state.weatherTimer = Math.max(0, state.weatherTimer - 1);
+                }
+                if (state.weatherTimer <= 0) {
+                    changeWeather();
+                }
+
+                if (state.dealerTimer > 0) {
+                    state.dealerTimer = Math.max(0, state.dealerTimer - 1);
+                }
+                if (state.dealerTimer <= 0) {
+                    generateRates();
+                    state.dealerTimer = 15 * 60;
+                }
+
+                tickCounter++;
+                if (tickCounter % 1209600 === 0) {
+                    updateDifficulty();
+                }
+
+                processMonthlyPayments();
+            }
+
+            state.lastTick = Date.now();
+            render();
+            updateTimer();
+        }
+
+        // ============================================================
+        //  RESET
+        // ============================================================
+        function resetGame() {
+            state.btc = 0;
+            state.eur = 5000;
+            state.miners = [0];
+            state.solarSystems = [0];
+            state.battery = 5000;
+            state.maxMiners = 4;
+            state.dealerRates = [0, 0, 0, 0];
+            state.dealerTimer = 15 * 60;
+            state.lastTick = Date.now();
+            state.difficulty = 1.0;
+            state.totalMined = 0;
+            state.weatherHistory = [];
+            state.weatherIndex = 0;
+            state.weatherTimer = 4 * 3600;
+            state.gameTime = 0;
+            state.lastPaymentDay = 0;
+            state.paymentHistory = [];
+            state.rateHistory = [];
+            tickCounter = 0;
+            generateRates();
+            render();
+            saveGame();
+        }
+
+        // ============================================================
+        //  SPEED CONTROLS
+        // ============================================================
+        function initSpeedControls() {
+            const buttons = document.querySelectorAll('.speed-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    state.speed = parseInt(this.dataset.speed);
+                    document.getElementById('speedLabel').textContent = state.speed + 'x';
+                    document.getElementById('timeSpeedDisplay').textContent = state.speed;
+                });
+            });
+        }
+
+        // ============================================================
+        //  TABS
+        // ============================================================
+        function initTabs() {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = {
+                server: document.getElementById('tab-server'),
+                shop: document.getElementById('tab-shop'),
+                dealer: document.getElementById('tab-dealer'),
+                finance: document.getElementById('tab-finance')
+            };
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    Object.values(tabContents).forEach(content => content.classList.remove('active'));
+                    const tabId = this.dataset.tab;
+                    if (tabContents[tabId]) tabContents[tabId].classList.add('active');
+                });
+            });
+        }
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        function init() {
+            initTabs();
+            initSpeedControls();
+
+            const loaded = loadGame();
+            if (!loaded) {
+                generateRates();
+                changeWeather();
+            }
+
+            render();
+            updateTimer();
+
+            document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+            setInterval(tick, 1000);
+            setInterval(updateTimer, 5000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
