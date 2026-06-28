@@ -1331,7 +1331,7 @@
             renderStats();
             renderMiners();
             renderShop();
-            renderDealer();
+            updateDealerStats(); // nur Kurs/BTC-Balance updaten, nie das Input-Feld
             renderFinance();
             saveGame();
         }
@@ -1591,33 +1591,24 @@
             });
         }
 
-        // ============================================================
-        //  RENDER DEALER
-        // ============================================================
+        // Wird nur aufgerufen wenn Input-Felder neu gebaut werden müssen (Tab-Wechsel / Kurswechsel)
+        let dealerBuilt = false;
+
         function renderDealer() {
             const grid = document.getElementById('dealerGrid');
             grid.innerHTML = '';
-
-            const avgRate = getAverageRate();
-            document.getElementById('avgRateDisplay').textContent = `€${avgRate.toFixed(2)}`;
-            const gameTime = getGameDateTime(state.gameTime);
-            document.getElementById('rateTimeDisplay').textContent = gameTime.full;
+            dealerBuilt = true;
 
             for (let i = 0; i < 4; i++) {
                 const rate = state.dealerRates[i] || 0;
                 const card = document.createElement('div');
                 card.className = 'dealer-card';
 
-                const prevRate = state.dealerRates[i] || rate;
-                const change = rate - prevRate;
-                const changeClass = change >= 0 ? 'up' : 'down';
-                const changeSign = change >= 0 ? '+' : '';
-
                 card.innerHTML = `
                     <h4>🏦 Händler ${i+1}</h4>
-                    <div class="rate">€${rate.toFixed(2)}</div>
-                    <div class="rate-change ${changeClass}">${changeSign}${change.toFixed(2)} €</div>
-                    <div class="fee">2% Gebühr · €${(rate * 0.02).toFixed(2)} pro BTC</div>
+                    <div class="rate" id="dealerRate_${i}">€${rate.toFixed(2)}</div>
+                    <div class="rate-change" id="dealerChange_${i}">–</div>
+                    <div class="fee" id="dealerFee_${i}">2% Gebühr · €${(rate * 0.02).toFixed(2)} pro BTC</div>
 
                     <div class="btc-amount">
                         <label>Bitcoin:</label>
@@ -1628,17 +1619,17 @@
                     <div class="preview" id="preview_${i}">
                         <div class="row">
                             <span class="label">Bitcoin</span>
-                            <span class="value" id="previewBtc_${i}">1.00 BTC</span>
+                            <span class="value" id="previewBtc_${i}">0.0001 BTC</span>
                         </div>
                         <div class="row">
                             <span class="label">Kurs</span>
-                            <span class="value">€${rate.toFixed(2)}</span>
+                            <span class="value" id="previewRate_${i}">€${rate.toFixed(2)}</span>
                         </div>
                         <div class="row">
                             <span class="label">Gebühr (2%)</span>
-                            <span class="value red" id="previewFee_${i}">-€${(rate * 0.02).toFixed(2)}</span>
+                            <span class="value red" id="previewFee_${i}">-€0.00</span>
                         </div>
-                        <div class="total" id="previewTotal_${i}">= €${rate.toFixed(2)}</div>
+                        <div class="total" id="previewTotal_${i}">= €0.00</div>
                     </div>
 
                     <button class="sell-btn" data-dealer="${i}" id="sellBtn_${i}" disabled>
@@ -1650,27 +1641,21 @@
                 grid.appendChild(card);
 
                 const input = document.getElementById(`btcAmount_${i}`);
-                input.addEventListener('input', function() {
-                    updatePreview(i, rate);
-                });
+                input.addEventListener('input', function() { updatePreview(i, state.dealerRates[i]); });
 
-                const maxBtn = card.querySelector('.max-btn');
-                maxBtn.addEventListener('click', function() {
+                card.querySelector('.max-btn').addEventListener('click', function() {
                     input.value = Math.max(0, parseFloat(state.btc.toFixed(4)));
-                    updatePreview(i, rate);
+                    updatePreview(i, state.dealerRates[i]);
                 });
 
-                const sellBtn = document.getElementById(`sellBtn_${i}`);
-                sellBtn.addEventListener('click', function() {
+                document.getElementById(`sellBtn_${i}`).addEventListener('click', function() {
                     const amount = parseFloat(parseFloat(document.getElementById(`btcAmount_${i}`).value).toFixed(4)) || 0;
+                    const rate = state.dealerRates[i];
                     if (amount > 0 && amount <= parseFloat(state.btc.toFixed(4))) {
                         const fee = rate * 0.02;
                         const netRate = rate - fee;
                         const total = amount * netRate;
-
-                        if (confirm(`💰 Verkauf bestätigen?\n\n` +
-                                `📊 ${amount.toFixed(4)} BTC × €${netRate.toFixed(2)} = €${total.toFixed(2)}\n` +
-                                `📉 Gebühr: €${(amount * fee).toFixed(2)}`)) {
+                        if (confirm(`💰 Verkauf bestätigen?\n\n📊 ${amount.toFixed(4)} BTC × €${netRate.toFixed(2)} = €${total.toFixed(2)}\n📉 Gebühr: €${(amount * fee).toFixed(2)}`)) {
                             state.btc -= amount;
                             state.btc = Math.max(0, parseFloat(state.btc.toFixed(8)));
                             state.eur += total;
@@ -1682,6 +1667,7 @@
                 updatePreview(i, rate);
             }
 
+            // Kurshistorie
             const historyContainer = document.getElementById('rateHistory');
             historyContainer.innerHTML = '';
             const history = state.rateHistory.slice(-10);
@@ -1691,15 +1677,40 @@
                 for (const entry of history) {
                     const div = document.createElement('div');
                     div.className = 'history-item';
-                    div.innerHTML = `
-                        <div>${entry.time}</div>
-                        <div class="price">€${entry.rate.toFixed(0)}</div>
-                    `;
+                    div.innerHTML = `<div>${entry.time}</div><div class="price">€${entry.rate.toFixed(0)}</div>`;
                     historyContainer.appendChild(div);
                 }
             }
 
+            updateDealerStats();
             updateTimer();
+        }
+
+        // Aktualisiert nur Kurszahlen – berührt NIEMALS die Input-Felder
+        function updateDealerStats() {
+            const avgRate = getAverageRate();
+            const avgEl = document.getElementById('avgRateDisplay');
+            const timeEl = document.getElementById('rateTimeDisplay');
+            if (avgEl) avgEl.textContent = `€${avgRate.toFixed(2)}`;
+            if (timeEl) timeEl.textContent = getGameDateTime(state.gameTime).full;
+
+            for (let i = 0; i < 4; i++) {
+                const rate = state.dealerRates[i] || 0;
+                const rateEl = document.getElementById(`dealerRate_${i}`);
+                const feeEl = document.getElementById(`dealerFee_${i}`);
+                const ratePreviewEl = document.getElementById(`previewRate_${i}`);
+                if (rateEl) rateEl.textContent = `€${rate.toFixed(2)}`;
+                if (feeEl) feeEl.textContent = `2% Gebühr · €${(rate * 0.02).toFixed(2)} pro BTC`;
+                if (ratePreviewEl) ratePreviewEl.textContent = `€${rate.toFixed(2)}`;
+                // Sell-Button disabled-Status aktualisieren ohne Input zu ändern
+                const input = document.getElementById(`btcAmount_${i}`);
+                const sellBtn = document.getElementById(`sellBtn_${i}`);
+                if (input && sellBtn) {
+                    const amount = parseFloat(input.value) || 0;
+                    const maxBtc = parseFloat(state.btc.toFixed(4));
+                    sellBtn.disabled = amount <= 0 || amount > maxBtc || state.btc <= 0;
+                }
+            }
         }
 
         function updatePreview(dealerIdx, rate) {
@@ -1927,6 +1938,13 @@
                 if (state.dealerTimer <= 0) {
                     generateRates();
                     state.dealerTimer = 24 * 60 * 60;
+                    // Dealer-Tab neu aufbauen wenn er gerade sichtbar ist
+                    const dealerTab = document.getElementById('tab-dealer');
+                    if (dealerTab && dealerTab.classList.contains('active')) {
+                        renderDealer();
+                    } else {
+                        dealerBuilt = false; // wird beim nächsten Tab-Öffnen neu gebaut
+                    }
                 }
 
                 tickCounter++;
@@ -1990,16 +2008,14 @@
             };
 
             function switchTab(tabId) {
-                // Desktop-Tabs
                 tabButtons.forEach(b => b.classList.remove('active'));
                 tabButtons.forEach(b => { if (b.dataset.tab === tabId) b.classList.add('active'); });
-                // Mobile-Tabs
                 mobButtons.forEach(b => b.classList.remove('active'));
                 mobButtons.forEach(b => { if (b.dataset.tab === tabId) b.classList.add('active'); });
-                // Inhalte
                 Object.values(tabContents).forEach(c => c.classList.remove('active'));
                 if (tabContents[tabId]) tabContents[tabId].classList.add('active');
-                // Mobil: nach oben scrollen beim Tab-Wechsel
+                // Dealer-Tab: Input-Felder nur beim Öffnen neu bauen
+                if (tabId === 'dealer') renderDealer();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
