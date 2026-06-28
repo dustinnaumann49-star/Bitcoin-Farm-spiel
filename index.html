@@ -5,11 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitcoin Miner - ASIC Edition</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* ===== ALLE STYLES WIE VORHER ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             background: #0a0e14;
@@ -39,41 +36,22 @@
             padding: 15px 25px;
             border-radius: 15px;
         }
-        .header h1 {
-            font-size: 24px;
-            color: #f7931a;
-        }
+        .header h1 { font-size: 24px; color: #f7931a; }
         .stats {
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
             align-items: center;
         }
-        .stats span {
-            font-weight: bold;
-            font-size: 13px;
-        }
-        .stats .btc {
-            color: #f7931a;
-        }
-        .stats .eur {
-            color: #4fc3f7;
-        }
-        .stats .power {
-            color: #ffd54f;
-        }
-        .stats .hash {
-            color: #ce93d8;
-        }
-        .stats .status {
-            color: #81c784;
-        }
-        .stats .battery {
-            color: #4fc3f7;
-        }
-        .stats .time {
-            color: #ffd54f;
-        }
+        .stats span { font-weight: bold; font-size: 13px; }
+        .stats .btc { color: #f7931a; }
+        .stats .eur { color: #4fc3f7; }
+        .stats .power { color: #ffd54f; }
+        .stats .hash { color: #ce93d8; }
+        .stats .status { color: #81c784; }
+        .stats .battery { color: #4fc3f7; }
+        .stats .time { color: #ffd54f; }
+        .stats .offline { color: #ff9800; }
         .tabs {
             display: flex;
             gap: 10px;
@@ -93,29 +71,11 @@
             cursor: pointer;
             transition: 0.2s;
         }
-        .tab-btn:hover {
-            background: #1e2a3a;
-            color: #fff;
-        }
-        .tab-btn.active {
-            background: #2a3a52;
-            color: #fff;
-        }
-        .tab-content {
-            display: none;
-            animation: fade 0.3s;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        @keyframes fade {
-            0% {
-                opacity: 0;
-            }
-            100% {
-                opacity: 1;
-            }
-        }
+        .tab-btn:hover { background: #1e2a3a; color: #fff; }
+        .tab-btn.active { background: #2a3a52; color: #fff; }
+        .tab-content { display: none; animation: fade 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fade { 0% { opacity: 0; } 100% { opacity: 1; } }
         .miner-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -130,28 +90,11 @@
             border: 1px solid #2a3648;
             transition: 0.3s;
         }
-        .miner-card.empty {
-            opacity: 0.5;
-            border-style: dashed;
-        }
-        .miner-card.offline {
-            opacity: 0.5;
-            border-color: #ff6b6b;
-        }
-        .miner-card h3 {
-            color: #b0c4de;
-            margin-bottom: 10px;
-        }
-        .miner-card .parts {
-            font-size: 13px;
-            color: #8899b3;
-            min-height: 50px;
-        }
-        .miner-card .info {
-            font-size: 12px;
-            color: #ce93d8;
-            margin-top: 8px;
-        }
+        .miner-card.empty { opacity: 0.5; border-style: dashed; }
+        .miner-card.offline { opacity: 0.5; border-color: #ff6b6b; }
+        .miner-card h3 { color: #b0c4de; margin-bottom: 10px; }
+        .miner-card .parts { font-size: 13px; color: #8899b3; min-height: 50px; }
+        .miner-card .info { font-size: 12px; color: #ce93d8; margin-top: 8px; }
         .miner-card .status-badge {
             display: inline-block;
             padding: 2px 12px;
@@ -159,14 +102,8 @@
             font-size: 12px;
             margin-top: 5px;
         }
-        .miner-card .status-badge.online {
-            background: #2e7d32;
-            color: #a5d6a7;
-        }
-        .miner-card .status-badge.offline {
-            background: #7d2e2e;
-            color: #ef9a9a;
-        }
+        .miner-card .status-badge.online { background: #2e7d32; color: #a5d6a7; }
+        .miner-card .status-badge.offline { background: #7d2e2e; color: #ef9a9a; }
         .shop-item {
             background: #1a2432;
             border-radius: 12px;
@@ -179,19 +116,9 @@
             gap: 10px;
             border-left: 4px solid #4a6a8f;
         }
-        .shop-item .desc {
-            display: flex;
-            gap: 12px;
-            align-items: baseline;
-            flex-wrap: wrap;
-        }
-        .shop-item .desc strong {
-            color: #e0e6ed;
-        }
-        .shop-item .desc small {
-            color: #8899b3;
-            font-size: 12px;
-        }
+        .shop-item .desc { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+        .shop-item .desc strong { color: #e0e6ed; }
+        .shop-item .desc small { color: #8899b3; font-size: 12px; }
         .shop-item button {
             background: #2a4a6a;
             border: none;
@@ -203,14 +130,8 @@
             transition: 0.15s;
             font-size: 13px;
         }
-        .shop-item button:hover:not(:disabled) {
-            background: #3a6a8a;
-            transform: scale(1.02);
-        }
-        .shop-item button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
+        .shop-item button:hover:not(:disabled) { background: #3a6a8a; transform: scale(1.02); }
+        .shop-item button:disabled { opacity: 0.4; cursor: not-allowed; }
         .shop-category {
             font-weight: 600;
             color: #b0c4de;
@@ -219,11 +140,7 @@
             padding-bottom: 4px;
             font-size: 16px;
         }
-        .shop-category .cat-icon {
-            margin-right: 8px;
-        }
-
-        /* ===== DEALER ===== */
+        .shop-category .cat-icon { margin-right: 8px; }
         .dealer-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -237,27 +154,11 @@
             border: 1px solid #2a3648;
             text-align: center;
         }
-        .dealer-card .rate {
-            font-size: 32px;
-            font-weight: bold;
-            color: #ffd54f;
-            margin: 10px 0;
-        }
-        .dealer-card .rate-change {
-            font-size: 14px;
-            color: #8899b3;
-        }
-        .dealer-card .rate-change.up {
-            color: #81c784;
-        }
-        .dealer-card .rate-change.down {
-            color: #ff6b6b;
-        }
-        .dealer-card .fee {
-            font-size: 12px;
-            color: #8899b3;
-            margin-bottom: 10px;
-        }
+        .dealer-card .rate { font-size: 32px; font-weight: bold; color: #ffd54f; margin: 10px 0; }
+        .dealer-card .rate-change { font-size: 14px; color: #8899b3; }
+        .dealer-card .rate-change.up { color: #81c784; }
+        .dealer-card .rate-change.down { color: #ff6b6b; }
+        .dealer-card .fee { font-size: 12px; color: #8899b3; margin-bottom: 10px; }
         .dealer-card .btc-amount {
             display: flex;
             align-items: center;
@@ -265,10 +166,7 @@
             gap: 10px;
             margin: 10px 0;
         }
-        .dealer-card .btc-amount label {
-            color: #8899b3;
-            font-size: 14px;
-        }
+        .dealer-card .btc-amount label { color: #8899b3; font-size: 14px; }
         .dealer-card .btc-amount input {
             background: #0a0e14;
             border: 1px solid #2a3648;
@@ -279,10 +177,7 @@
             font-size: 16px;
             text-align: center;
         }
-        .dealer-card .btc-amount input:focus {
-            outline: none;
-            border-color: #4fc3f7;
-        }
+        .dealer-card .btc-amount input:focus { outline: none; border-color: #4fc3f7; }
         .dealer-card .btc-amount .max-btn {
             background: #2a3a52;
             border: none;
@@ -292,9 +187,7 @@
             cursor: pointer;
             font-size: 12px;
         }
-        .dealer-card .btc-amount .max-btn:hover {
-            background: #3a4a6a;
-        }
+        .dealer-card .btc-amount .max-btn:hover { background: #3a4a6a; }
         .dealer-card .preview {
             background: #0a0e14;
             border-radius: 10px;
@@ -308,19 +201,10 @@
             padding: 4px 0;
             font-size: 14px;
         }
-        .dealer-card .preview .row .label {
-            color: #8899b3;
-        }
-        .dealer-card .preview .row .value {
-            color: #e0e6ed;
-            font-weight: 600;
-        }
-        .dealer-card .preview .row .value.green {
-            color: #81c784;
-        }
-        .dealer-card .preview .row .value.red {
-            color: #ff6b6b;
-        }
+        .dealer-card .preview .row .label { color: #8899b3; }
+        .dealer-card .preview .row .value { color: #e0e6ed; font-weight: 600; }
+        .dealer-card .preview .row .value.green { color: #81c784; }
+        .dealer-card .preview .row .value.red { color: #ff6b6b; }
         .dealer-card .preview .total {
             font-size: 18px;
             font-weight: 700;
@@ -342,21 +226,9 @@
             font-size: 16px;
             width: 100%;
         }
-        .dealer-card .sell-btn:hover:not(:disabled) {
-            background: #3a8a5a;
-            transform: scale(1.02);
-        }
-        .dealer-card .sell-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-        .dealer-card .timer {
-            font-size: 13px;
-            color: #8899b3;
-            margin-top: 10px;
-        }
-
-        /* ===== DEALER HISTORY ===== */
+        .dealer-card .sell-btn:hover:not(:disabled) { background: #3a8a5a; transform: scale(1.02); }
+        .dealer-card .sell-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .dealer-card .timer { font-size: 13px; color: #8899b3; margin-top: 10px; }
         .dealer-history {
             background: #1a2432;
             border-radius: 12px;
@@ -364,10 +236,7 @@
             margin-top: 20px;
             border: 1px solid #2a3648;
         }
-        .dealer-history h3 {
-            color: #b0c4de;
-            margin-bottom: 10px;
-        }
+        .dealer-history h3 { color: #b0c4de; margin-bottom: 10px; }
         .dealer-history .history-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -382,12 +251,7 @@
             font-size: 12px;
             color: #8899b3;
         }
-        .dealer-history .history-item .price {
-            color: #ffd54f;
-            font-weight: 600;
-        }
-
-        /* ===== FINANZEN ===== */
+        .dealer-history .history-item .price { color: #ffd54f; font-weight: 600; }
         .finance-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -400,34 +264,18 @@
             padding: 18px;
             border: 1px solid #2a3648;
         }
-        .finance-card h3 {
-            color: #b0c4de;
-            margin-bottom: 12px;
-            border-bottom: 1px solid #2a3648;
-            padding-bottom: 8px;
-        }
+        .finance-card h3 { color: #b0c4de; margin-bottom: 12px; border-bottom: 1px solid #2a3648; padding-bottom: 8px; }
         .finance-card .row {
             display: flex;
             justify-content: space-between;
             padding: 6px 0;
             font-size: 14px;
         }
-        .finance-card .row .label {
-            color: #8899b3;
-        }
-        .finance-card .row .value {
-            color: #e0e6ed;
-            font-weight: 600;
-        }
-        .finance-card .row .value.red {
-            color: #ff6b6b;
-        }
-        .finance-card .row .value.green {
-            color: #81c784;
-        }
-        .finance-card .row .value.yellow {
-            color: #ffd54f;
-        }
+        .finance-card .row .label { color: #8899b3; }
+        .finance-card .row .value { color: #e0e6ed; font-weight: 600; }
+        .finance-card .row .value.red { color: #ff6b6b; }
+        .finance-card .row .value.green { color: #81c784; }
+        .finance-card .row .value.yellow { color: #ffd54f; }
         .finance-card .next-payment {
             margin-top: 12px;
             padding: 10px;
@@ -436,15 +284,8 @@
             text-align: center;
             border: 1px solid #3a3a4a;
         }
-        .finance-card .next-payment .countdown {
-            font-size: 20px;
-            font-weight: 700;
-            color: #4fc3f7;
-        }
-        .finance-card .next-payment .label {
-            font-size: 13px;
-            color: #8899b3;
-        }
+        .finance-card .next-payment .countdown { font-size: 20px; font-weight: 700; color: #4fc3f7; }
+        .finance-card .next-payment .label { font-size: 13px; color: #8899b3; }
         .finance-card .total-cost {
             margin-top: 12px;
             padding: 12px;
@@ -453,15 +294,8 @@
             text-align: center;
             border: 1px solid #4a4a4a;
         }
-        .finance-card .total-cost .amount {
-            font-size: 24px;
-            font-weight: 700;
-            color: #ff6b6b;
-        }
-        .finance-card .total-cost .label {
-            font-size: 13px;
-            color: #8899b3;
-        }
+        .finance-card .total-cost .amount { font-size: 24px; font-weight: 700; color: #ff6b6b; }
+        .finance-card .total-cost .label { font-size: 13px; color: #8899b3; }
         .finance-card .history {
             margin-top: 12px;
             max-height: 120px;
@@ -475,15 +309,9 @@
             color: #8899b3;
             border-bottom: 1px solid #1a1a2a;
         }
-        .finance-card .history .entry .date {
-            color: #4fc3f7;
-        }
-        .finance-card .history .entry .amount.red {
-            color: #ff6b6b;
-        }
-        .finance-card .history .entry .amount.green {
-            color: #81c784;
-        }
+        .finance-card .history .entry .date { color: #4fc3f7; }
+        .finance-card .history .entry .amount.red { color: #ff6b6b; }
+        .finance-card .history .entry .amount.green { color: #81c784; }
         .finance-summary {
             background: #2a2a3a;
             border-radius: 12px;
@@ -495,27 +323,12 @@
             flex-wrap: wrap;
             gap: 15px;
         }
-        .finance-summary .item {
-            text-align: center;
-        }
-        .finance-summary .item .label {
-            font-size: 12px;
-            color: #8899b3;
-        }
-        .finance-summary .item .value {
-            font-size: 18px;
-            font-weight: 700;
-        }
-        .finance-summary .item .value.green {
-            color: #81c784;
-        }
-        .finance-summary .item .value.red {
-            color: #ff6b6b;
-        }
-        .finance-summary .item .value.yellow {
-            color: #ffd54f;
-        }
-
+        .finance-summary .item { text-align: center; }
+        .finance-summary .item .label { font-size: 12px; color: #8899b3; }
+        .finance-summary .item .value { font-size: 18px; font-weight: 700; }
+        .finance-summary .item .value.green { color: #81c784; }
+        .finance-summary .item .value.red { color: #ff6b6b; }
+        .finance-summary .item .value.yellow { color: #ffd54f; }
         .footer {
             margin-top: 25px;
             display: flex;
@@ -523,8 +336,7 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        .reset-btn,
-        .speed-btn {
+        .reset-btn, .speed-btn {
             background: #3a2a3a;
             border: none;
             color: #ccc;
@@ -535,26 +347,10 @@
             transition: 0.2s;
             font-size: 14px;
         }
-        .reset-btn:hover,
-        .speed-btn:hover {
-            background: #5a3a4a;
-        }
-        .speed-btn.active {
-            background: #2a4a3a;
-            color: #a5d6a7;
-            border: 1px solid #4a8a4a;
-        }
-        .speed-controls {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .speed-controls label {
-            color: #8899b3;
-            font-size: 14px;
-            margin-right: 5px;
-        }
+        .reset-btn:hover, .speed-btn:hover { background: #5a3a4a; }
+        .speed-btn.active { background: #2a4a3a; color: #a5d6a7; border: 1px solid #4a8a4a; }
+        .speed-controls { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .speed-controls label { color: #8899b3; font-size: 14px; margin-right: 5px; }
         .badge {
             display: inline-block;
             background: #2a3a52;
@@ -563,39 +359,13 @@
             font-size: 12px;
             color: #b0c4de;
         }
-        .hint {
-            color: #667a99;
-            font-size: 14px;
-            margin-top: 15px;
-        }
-        .timer {
-            color: #8899b3;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-        .warning {
-            color: #ff6b6b;
-            font-weight: 600;
-        }
-        .success {
-            color: #81c784;
-            font-weight: 600;
-        }
-        .price-update {
-            color: #ffd54f;
-            font-size: 11px;
-        }
-        .realistic-badge {
-            background: #2a4a3a;
-            padding: 2px 10px;
-            border-radius: 10px;
-            font-size: 10px;
-            color: #a5d6a7;
-        }
-        .power-total {
-            font-size: 14px;
-            color: #ffd54f;
-        }
+        .hint { color: #667a99; font-size: 14px; margin-top: 15px; }
+        .timer { color: #8899b3; font-size: 14px; margin-top: 10px; }
+        .warning { color: #ff6b6b; font-weight: 600; }
+        .success { color: #81c784; font-weight: 600; }
+        .price-update { color: #ffd54f; font-size: 11px; }
+        .realistic-badge { background: #2a4a3a; padding: 2px 10px; border-radius: 10px; font-size: 10px; color: #a5d6a7; }
+        .power-total { font-size: 14px; color: #ffd54f; }
         .battery-bar {
             width: 100%;
             height: 20px;
@@ -625,28 +395,13 @@
             flex-wrap: wrap;
             gap: 5px;
         }
-        .solar-info .label {
-            color: #8899b3;
-        }
-        .solar-info .value {
-            color: #e0e6ed;
-            font-weight: 600;
-        }
-        .solar-info .value.green {
-            color: #81c784;
-        }
-        .solar-info .value.yellow {
-            color: #ffd54f;
-        }
-        .solar-info .value.red {
-            color: #ff6b6b;
-        }
-        .solar-info .value.orange {
-            color: #ff9800;
-        }
-        .weather-icon {
-            font-size: 28px;
-        }
+        .solar-info .label { color: #8899b3; }
+        .solar-info .value { color: #e0e6ed; font-weight: 600; }
+        .solar-info .value.green { color: #81c784; }
+        .solar-info .value.yellow { color: #ffd54f; }
+        .solar-info .value.red { color: #ff6b6b; }
+        .solar-info .value.orange { color: #ff9800; }
+        .weather-icon { font-size: 28px; }
         .profit {
             background: #1a2432;
             border-radius: 12px;
@@ -667,9 +422,7 @@
             color: #a5d6a7;
             font-size: 14px;
         }
-        .start-hint strong {
-            color: #ffd54f;
-        }
+        .start-hint strong { color: #ffd54f; }
         .costs {
             background: #2a2a3a;
             border-radius: 12px;
@@ -682,19 +435,10 @@
             gap: 10px;
             font-size: 13px;
         }
-        .costs .label {
-            color: #8899b3;
-        }
-        .costs .value {
-            color: #e0e6ed;
-            font-weight: 600;
-        }
-        .costs .value.red {
-            color: #ff6b6b;
-        }
-        .costs .value.green {
-            color: #81c784;
-        }
+        .costs .label { color: #8899b3; }
+        .costs .value { color: #e0e6ed; font-weight: 600; }
+        .costs .value.red { color: #ff6b6b; }
+        .costs .value.green { color: #81c784; }
         .weather-forecast {
             background: #1a2432;
             border-radius: 12px;
@@ -707,18 +451,9 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        .weather-forecast .weather-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .weather-forecast .weather-detail {
-            font-size: 13px;
-            color: #8899b3;
-        }
-        .weather-forecast .weather-detail strong {
-            color: #e0e6ed;
-        }
+        .weather-forecast .weather-info { display: flex; align-items: center; gap: 15px; }
+        .weather-forecast .weather-detail { font-size: 13px; color: #8899b3; }
+        .weather-forecast .weather-detail strong { color: #e0e6ed; }
         .time-display {
             background: #1a2432;
             border-radius: 12px;
@@ -727,12 +462,8 @@
             font-size: 13px;
             color: #8899b3;
         }
-        .time-display strong {
-            color: #ffd54f;
-        }
-        .time-display .date-highlight {
-            color: #4fc3f7;
-        }
+        .time-display strong { color: #ffd54f; }
+        .time-display .date-highlight { color: #4fc3f7; }
         .speed-label {
             background: #2a4a3a;
             padding: 2px 12px;
@@ -755,9 +486,7 @@
             border: 1px solid #2a3648;
             font-size: 13px;
         }
-        .game-clock .date-box strong {
-            color: #4fc3f7;
-        }
+        .game-clock .date-box strong { color: #4fc3f7; }
         .game-clock .time-box {
             background: #1a2432;
             padding: 4px 12px;
@@ -765,25 +494,19 @@
             border: 1px solid #2a3648;
             font-size: 13px;
         }
-        .game-clock .time-box strong {
-            color: #ffd54f;
+        .game-clock .time-box strong { color: #ffd54f; }
+        .offline-badge {
+            background: #2a3a2a;
+            padding: 2px 12px;
+            border-radius: 12px;
+            color: #81c784;
+            font-size: 11px;
+            border: 1px solid #4a6a4a;
         }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0a0e14;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #2a3648;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #3a4a6a;
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0e14; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #2a3648; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3a4a6a; }
     </style>
 </head>
 <body>
@@ -798,6 +521,7 @@
                 <span class="battery">🔋 <span id="batteryDisplay">0</span> Wh</span>
                 <span class="hash">⚡ <span id="hashDisplay">0</span> TH/s</span>
                 <span class="time">⏱️ <span id="timeDisplay">Tag 1</span></span>
+                <span class="offline" id="offlineDisplay">🟢 Online</span>
                 <span class="status" id="statusDisplay">✅ Aktiv</span>
             </div>
         </div>
@@ -824,6 +548,7 @@
                     <div class="date-box">📅 <strong id="gameDateDisplay">01.01.2026</strong></div>
                     <div class="time-box">⏱️ <strong id="gameTimeDisplay">00:00</strong></div>
                     <span class="speed-label" id="speedLabel">5x</span>
+                    <span class="offline-badge" id="offlineBadge">⏳ Kein Offline-Mining</span>
                 </div>
                 <div class="speed-controls">
                     <label>⏩ Geschwindigkeit:</label>
@@ -833,6 +558,12 @@
                     <button class="speed-btn" data-speed="30">30x</button>
                     <button class="speed-btn" data-speed="60">60x</button>
                 </div>
+            </div>
+
+            <!-- OFFLINE FARMING INFO -->
+            <div id="offlineInfo" style="background:#2a3a2a; border-radius:12px; padding:12px 18px; margin:10px 0; border:1px solid #4a6a4a; display:none;">
+                <span style="color:#81c784;">🔄 <strong>Offline-Farming!</strong></span>
+                <span style="color:#a5d6a7;" id="offlineMinedText">Du warst 0 Minuten weg und hast 0.0000 BTC gemined.</span>
             </div>
 
             <div class="weather-forecast">
@@ -908,7 +639,6 @@
         <div class="tab-content" id="tab-dealer">
             <h3>📊 Händler <span class="price-update">(2% Transaktionsgebühr · Nur ganze Bitcoins)</span></h3>
 
-            <!-- Aktueller Gesamtkurs -->
             <div style="background:#1a2432; border-radius:12px; padding:15px; margin-bottom:15px; border:1px solid #2a3648; text-align:center;">
                 <div style="font-size:14px; color:#8899b3;">Aktueller Bitcoin-Kurs (Durchschnitt)</div>
                 <div style="font-size:36px; font-weight:700; color:#f7931a;" id="avgRateDisplay">€0.00</div>
@@ -918,7 +648,6 @@
             <div class="dealer-grid" id="dealerGrid"></div>
             <div class="timer" id="dealerTimer">⏳ Nächster Kurswechsel in: --</div>
 
-            <!-- Kurs-Historie -->
             <div class="dealer-history">
                 <h3>📈 Kurs-Historie (letzte 10 Wechsel)</h3>
                 <div class="history-grid" id="rateHistory"></div>
@@ -1066,6 +795,7 @@
             dealerRates: [0, 0, 0, 0],
             dealerTimer: 15 * 60,
             lastTick: Date.now(),
+            lastSave: Date.now(), // 🔥 NEU: Timestamp für Offline-Farming
             difficulty: 1.0,
             totalMined: 0,
             weatherIndex: 0,
@@ -1078,12 +808,13 @@
             rateHistory: []
         };
 
-        const SAVE_KEY = 'btc_miner_final_v3';
+        const SAVE_KEY = 'btc_miner_final_v4';
 
         // ============================================================
         //  SPEICHERN / LADEN
         // ============================================================
         function saveGame() {
+            state.lastSave = Date.now(); // 🔥 Timestamp aktualisieren
             try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
         }
 
@@ -1100,6 +831,83 @@
                 if (!Array.isArray(state.rateHistory)) state.rateHistory = [];
                 return true;
             } catch (e) { return false; }
+        }
+
+        // ============================================================
+        //  OFFLINE FARMING 🔥 NEU
+        // ============================================================
+        function processOfflineFarming() {
+            const now = Date.now();
+            const diffSeconds = (now - state.lastSave) / 1000;
+
+            // Nur wenn mehr als 60 Sekunden vergangen sind
+            if (diffSeconds > 60) {
+                const hash = getTotalHash();
+                const difficulty = getDifficultyMultiplier();
+                const hasPower = getTotalProduction() > 0 || state.battery > 0;
+
+                if (hash > 0 && hasPower && state.miners.length > 0) {
+                    // Mining simulieren
+                    const minedPerSecond = (hash / difficulty) * 0.0000002;
+                    const mined = minedPerSecond * diffSeconds;
+
+                    state.btc += mined;
+                    state.totalMined += mined;
+
+                    // Batterie entladen (vereinfacht)
+                    const consumption = getTotalPower();
+                    const production = getTotalProduction();
+                    const netPower = production - consumption;
+
+                    if (netPower < 0) {
+                        const batteryDrain = Math.abs(netPower) / 3600 * diffSeconds;
+                        state.battery = Math.max(0, state.battery - batteryDrain);
+                    }
+
+                    // Info anzeigen
+                    const minutes = Math.floor(diffSeconds / 60);
+                    document.getElementById('offlineInfo').style.display = 'block';
+                    document.getElementById('offlineMinedText').textContent =
+                        `Du warst ${minutes} Minuten weg und hast ${mined.toFixed(6)} BTC gemined.`;
+
+                    // Offline-Badge aktualisieren
+                    document.getElementById('offlineBadge').textContent = `⏳ ${minutes}min Offline-Farming`;
+                    document.getElementById('offlineBadge').style.borderColor = '#81c784';
+
+                    // Status auf Orange setzen
+                    document.getElementById('offlineDisplay').textContent = '🟡 Offline-Farming';
+                    document.getElementById('offlineDisplay').style.color = '#ff9800';
+
+                    // Nach 5 Sekunden wieder ausblenden
+                    setTimeout(() => {
+                        document.getElementById('offlineInfo').style.display = 'none';
+                        document.getElementById('offlineBadge').textContent = '⏳ Kein Offline-Mining';
+                        document.getElementById('offlineBadge').style.borderColor = '#4a6a4a';
+                        document.getElementById('offlineDisplay').textContent = '🟢 Online';
+                        document.getElementById('offlineDisplay').style.color = '#81c784';
+                    }, 8000);
+                } else {
+                    // Kein Mining möglich
+                    document.getElementById('offlineInfo').style.display = 'block';
+                    document.getElementById('offlineInfo').style.borderColor = '#6a4a4a';
+                    document.getElementById('offlineInfo').innerHTML = `
+                        <span style="color:#ff6b6b;">⛔ <strong>Kein Offline-Mining!</strong></span>
+                        <span style="color:#ff6b6b;">Keine aktiven Miner oder kein Strom vorhanden.</span>
+                    `;
+                    setTimeout(() => {
+                        document.getElementById('offlineInfo').style.display = 'none';
+                        document.getElementById('offlineInfo').innerHTML = `
+                            <span style="color:#81c784;">🔄 <strong>Offline-Farming!</strong></span>
+                            <span style="color:#a5d6a7;" id="offlineMinedText">Du warst 0 Minuten weg und hast 0.0000 BTC gemined.</span>
+                        `;
+                        document.getElementById('offlineInfo').style.borderColor = '#4a6a4a';
+                    }, 5000);
+                }
+            }
+
+            // Timestamp zurücksetzen
+            state.lastSave = now;
+            saveGame();
         }
 
         // ============================================================
@@ -1543,7 +1351,6 @@
                 const card = document.createElement('div');
                 card.className = 'dealer-card';
 
-                // Kursänderung berechnen
                 const prevRate = state.dealerRates[i] || rate;
                 const change = rate - prevRate;
                 const changeClass = change >= 0 ? 'up' : 'down';
@@ -1585,13 +1392,11 @@
 
                 grid.appendChild(card);
 
-                // Event Listener für Input
                 const input = document.getElementById(`btcAmount_${i}`);
                 input.addEventListener('input', function() {
                     updatePreview(i, rate);
                 });
 
-                // Max Button
                 const maxBtn = card.querySelector('.max-btn');
                 maxBtn.addEventListener('click', function() {
                     const maxBtc = Math.floor(state.btc);
@@ -1599,7 +1404,6 @@
                     updatePreview(i, rate);
                 });
 
-                // Sell Button
                 const sellBtn = document.getElementById(`sellBtn_${i}`);
                 sellBtn.addEventListener('click', function() {
                     const amount = parseInt(document.getElementById(`btcAmount_${i}`).value) || 0;
@@ -1618,11 +1422,9 @@
                     }
                 });
 
-                // Initial Preview
                 updatePreview(i, rate);
             }
 
-            // Rate History
             const historyContainer = document.getElementById('rateHistory');
             historyContainer.innerHTML = '';
             const history = state.rateHistory.slice(-10);
@@ -1741,7 +1543,6 @@
             if (remaining <= 0) el.textContent = '⏳ Kurswechsel jetzt!';
             else el.textContent = `⏳ Nächster Kurswechsel in ~${remaining} min`;
 
-            // Update dealer timers
             document.querySelectorAll('.dealer-card .timer').forEach((timer, idx) => {
                 if (remaining <= 0) timer.textContent = '⏳ Kurswechsel jetzt!';
                 else timer.textContent = `⏳ Nächster Kurswechsel in ~${remaining} min`;
@@ -1781,7 +1582,6 @@
                 state.dealerRates[i] = Math.round((40000 + Math.random() * 35000) * 100) / 100;
             }
 
-            // Historie speichern
             const gameTime = getGameDateTime(state.gameTime);
             const avgRate = getAverageRate();
             state.rateHistory.push({
@@ -1880,6 +1680,7 @@
             state.dealerRates = [0, 0, 0, 0];
             state.dealerTimer = 15 * 60;
             state.lastTick = Date.now();
+            state.lastSave = Date.now();
             state.difficulty = 1.0;
             state.totalMined = 0;
             state.weatherHistory = [];
@@ -1947,6 +1748,9 @@
                 changeWeather();
             }
 
+            // 🔥 Offline-Farming prüfen
+            processOfflineFarming();
+
             render();
             updateTimer();
 
@@ -1954,6 +1758,11 @@
 
             setInterval(tick, 1000);
             setInterval(updateTimer, 5000);
+
+            // 🔥 Alle 30 Sekunden speichern (für Offline-Farming)
+            setInterval(() => {
+                saveGame();
+            }, 30000);
         }
 
         init();
