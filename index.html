@@ -812,7 +812,7 @@
 
         <!-- ===== DEALER TAB ===== -->
         <div class="tab-content" id="tab-dealer">
-            <h3>📊 Händler <span class="price-update">(2% Transaktionsgebühr · Nur ganze Bitcoins)</span></h3>
+            <h3>📊 Händler <span class="price-update">(2% Transaktionsgebühr · ab 0,0001 BTC)</span></h3>
 
             <div style="background:#1a2432; border-radius:12px; padding:15px; margin-bottom:15px; border:1px solid #2a3648; text-align:center;">
                 <div style="font-size:14px; color:#8899b3;">Aktueller Bitcoin-Kurs (Durchschnitt)</div>
@@ -829,7 +829,7 @@
             </div>
 
             <div style="margin-top:15px; padding:12px; background:#1a2432; border-radius:12px; border:1px solid #2a3648;">
-                <p style="color:#8899b3; font-size:13px;">💡 <strong>Tipp:</strong> Du kannst nur <strong>ganze Bitcoins</strong> verkaufen. Gib die Anzahl ein und sieh sofort wie viel Euro du dafür bekommst.</p>
+                <p style="color:#8899b3; font-size:13px;">💡 <strong>Tipp:</strong> Du kannst beliebige Mengen Bitcoin verkaufen – auch Bruchteile wie <strong>0,0001 BTC</strong>. Gib die Menge ein und sieh sofort wie viel Euro du bekommst.</p>
             </div>
         </div>
 
@@ -1594,7 +1594,7 @@
 
                     <div class="btc-amount">
                         <label>Bitcoin:</label>
-                        <input type="number" min="0" step="1" value="1" id="btcAmount_${i}">
+                        <input type="number" min="0" step="0.0001" value="0.0001" id="btcAmount_${i}">
                         <button class="max-btn" data-dealer="${i}">Max</button>
                     </div>
 
@@ -1629,23 +1629,23 @@
 
                 const maxBtn = card.querySelector('.max-btn');
                 maxBtn.addEventListener('click', function() {
-                    const maxBtc = Math.floor(state.btc);
-                    input.value = Math.max(0, maxBtc);
+                    input.value = Math.max(0, parseFloat(state.btc.toFixed(4)));
                     updatePreview(i, rate);
                 });
 
                 const sellBtn = document.getElementById(`sellBtn_${i}`);
                 sellBtn.addEventListener('click', function() {
-                    const amount = parseInt(document.getElementById(`btcAmount_${i}`).value) || 0;
-                    if (amount > 0 && amount <= Math.floor(state.btc)) {
+                    const amount = parseFloat(parseFloat(document.getElementById(`btcAmount_${i}`).value).toFixed(4)) || 0;
+                    if (amount > 0 && amount <= parseFloat(state.btc.toFixed(4))) {
                         const fee = rate * 0.02;
                         const netRate = rate - fee;
                         const total = amount * netRate;
 
                         if (confirm(`💰 Verkauf bestätigen?\n\n` +
-                                `📊 ${amount} BTC × €${netRate.toFixed(2)} = €${total.toFixed(2)}\n` +
+                                `📊 ${amount.toFixed(4)} BTC × €${netRate.toFixed(2)} = €${total.toFixed(2)}\n` +
                                 `📉 Gebühr: €${(amount * fee).toFixed(2)}`)) {
                             state.btc -= amount;
+                            state.btc = Math.max(0, parseFloat(state.btc.toFixed(8)));
                             state.eur += total;
                             render();
                         }
@@ -1677,21 +1677,22 @@
 
         function updatePreview(dealerIdx, rate) {
             const input = document.getElementById(`btcAmount_${dealerIdx}`);
-            let amount = parseInt(input.value) || 0;
-            const maxBtc = Math.floor(state.btc);
+            let amount = parseFloat(input.value) || 0;
+            const maxBtc = parseFloat(state.btc.toFixed(4));
             if (amount > maxBtc) amount = maxBtc;
             if (amount < 0) amount = 0;
+            amount = parseFloat(amount.toFixed(4));
 
             const fee = rate * 0.02;
             const netRate = rate - fee;
             const total = amount * netRate;
 
-            document.getElementById(`previewBtc_${dealerIdx}`).textContent = `${amount.toFixed(0)} BTC`;
+            document.getElementById(`previewBtc_${dealerIdx}`).textContent = `${amount.toFixed(4)} BTC`;
             document.getElementById(`previewFee_${dealerIdx}`).textContent = `-€${(amount * fee).toFixed(2)}`;
             document.getElementById(`previewTotal_${dealerIdx}`).textContent = `= €${total.toFixed(2)}`;
 
             const sellBtn = document.getElementById(`sellBtn_${dealerIdx}`);
-            sellBtn.disabled = amount === 0 || amount > maxBtc || state.btc === 0;
+            sellBtn.disabled = amount <= 0 || amount > maxBtc || state.btc <= 0;
         }
 
         // ============================================================
