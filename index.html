@@ -7,6 +7,12 @@
     <style>
         /* ===== ALLE STYLES WIE VORHER ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            /* dvh = dynamic viewport height: zieht Systemleiste automatisch ab */
+            max-height: 100dvh;
+            overflow: hidden;
+        }
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             background: #0a0e14;
@@ -519,11 +525,21 @@
                 padding: 0;
                 align-items: stretch;
             }
+            body {
+                overflow: hidden;
+                height: 100dvh;
+                max-height: 100dvh;
+            }
             .container {
                 border-radius: 0;
                 padding: 70px 10px 10px 10px;
                 box-shadow: none;
-                min-height: 100vh;
+                /* Scrollt innerhalb des sichtbaren Bereichs – Systemleiste bleibt außen */
+                height: 100dvh;
+                max-height: 100dvh;
+                overflow-y: auto;
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
             }
             /* Header kompakt */
             .header {
