@@ -815,7 +815,6 @@
 
             <div class="costs">
                 <span><span class="label">🏠 Miete (monatlich):</span> <span class="value red" id="rentCost">€0</span></span>
-                <span><span class="label">🔧 Wartung (monatlich):</span> <span class="value red" id="maintenanceCost">€0</span></span>
                 <span><span class="label">💰 Steuern (25%):</span> <span class="value red" id="taxCost">€0</span></span>
                 <span><span class="label">📈 Difficulty:</span> <span class="value" id="difficultyDisplay">1.00x</span></span>
             </div>
@@ -920,16 +919,6 @@
                     </div>
                 </div>
                 <div class="finance-card">
-                    <h3>🛡️ Versicherung</h3>
-                    <div class="row"><span class="label">Betrag</span><span class="value red" id="financeInsuranceAmount">€0.00</span></div>
-                    <div class="row"><span class="label">Zahlungsintervall</span><span class="value">Monatlich (1.)</span></div>
-                    <div class="row"><span class="label">Nächste Zahlung</span><span class="value yellow" id="financeInsuranceNext">--</span></div>
-                    <div class="next-payment">
-                        <div class="label">⏳ Countdown</div>
-                        <div class="countdown" id="financeInsuranceCountdown">--</div>
-                    </div>
-                </div>
-                <div class="finance-card">
                     <h3>⚡ Strom</h3>
                     <div class="row"><span class="label">Netzstrom diesen Monat</span><span class="value red" id="financePowerAmount">€0.00</span></div>
                     <div class="row"><span class="label">Netzstrom verbraucht</span><span class="value yellow" id="financePowerUsage">0 Wh</span></div>
@@ -938,16 +927,6 @@
                     <div class="next-payment">
                         <div class="label">⏳ Countdown</div>
                         <div class="countdown" id="financePowerCountdown">--</div>
-                    </div>
-                </div>
-                <div class="finance-card">
-                    <h3>🔧 Wartung</h3>
-                    <div class="row"><span class="label">Betrag</span><span class="value red" id="financeMaintenanceAmount">€0.00</span></div>
-                    <div class="row"><span class="label">Zahlungsintervall</span><span class="value">Monatlich (1.)</span></div>
-                    <div class="row"><span class="label">Nächste Zahlung</span><span class="value yellow" id="financeMaintenanceNext">--</span></div>
-                    <div class="next-payment">
-                        <div class="label">⏳ Countdown</div>
-                        <div class="countdown" id="financeMaintenanceCountdown">--</div>
                     </div>
                 </div>
             </div>
@@ -1197,7 +1176,6 @@
                 const gameDaysPassed = Math.floor(gameSeconds / 86400);
                 if (gameDaysPassed > 0) {
                     const monthlyRent = getRentCost();
-                    const monthlyMaintenance = getMaintenanceCost();
                     const monthlyPower = getPowerCost();
                     const monthlyTotal = monthlyRent + monthlyMaintenance + monthlyPower;
                     const dailyCost = monthlyTotal / 30;
@@ -1282,17 +1260,9 @@
 
         function getRentCost() { return getMinerCount() * 1500 + 300; }
 
-        function getMaintenanceCost() {
-            let totalValue = 0;
-            for (const idx of state.miners) totalValue += ASIC_MINERS[idx].price;
-            return totalValue * 0.004;
-        }
+        function getMaintenanceCost() { return 0; }
 
-        function getInsuranceCost() {
-            let totalValue = 0;
-            for (const idx of state.miners) totalValue += ASIC_MINERS[idx].price;
-            return totalValue * 0.005;
-        }
+        function getInsuranceCost() { return 0; }
 
         // Akkumulierter Netzstromverbrauch (Wh) seit letzter Monatsabrechnung
         // Wird jeden Tick live nachgeführt
@@ -1501,7 +1471,6 @@
             document.getElementById('weatherNight').textContent = Math.round(stats.night * 100) + '%';
 
             document.getElementById('rentCost').textContent = `€${getRentCost().toFixed(2)}`;
-            document.getElementById('maintenanceCost').textContent = `€${getMaintenanceCost().toFixed(2)}`;
             document.getElementById('difficultyDisplay').textContent = `${getDifficultyMultiplier().toFixed(2)}x`;
 
             document.getElementById('solarProduction').textContent = `${production} W`;
@@ -1981,9 +1950,6 @@
             document.getElementById('financeRentNext').textContent = nextDateStr;
             document.getElementById('financeRentCountdown').textContent = `${daysUntilPayment} Tage`;
 
-            document.getElementById('financeInsuranceAmount').textContent = `€${insurance.toFixed(2)}`;
-            document.getElementById('financeInsuranceNext').textContent = nextDateStr;
-            document.getElementById('financeInsuranceCountdown').textContent = `${daysUntilPayment} Tage`;
 
             document.getElementById('financePowerAmount').textContent = `€${getPowerCost().toFixed(2)}`;
             document.getElementById('financePowerUsage').textContent = `${Math.round(state.gridEnergyUsed || 0)} Wh`;
@@ -1995,9 +1961,6 @@
             document.getElementById('financePowerNext').textContent = nextDateStr;
             document.getElementById('financePowerCountdown').textContent = `${daysUntilPayment} Tage`;
 
-            document.getElementById('financeMaintenanceAmount').textContent = `€${maintenance.toFixed(2)}`;
-            document.getElementById('financeMaintenanceNext').textContent = nextDateStr;
-            document.getElementById('financeMaintenanceCountdown').textContent = `${daysUntilPayment} Tage`;
 
             const historyContainer = document.getElementById('paymentHistory');
             historyContainer.innerHTML = '';
@@ -2011,9 +1974,7 @@
                     div.innerHTML = `
                         <span class="date">${entry.date}</span>
                         <span>🏠 €${entry.rent.toFixed(2)}</span>
-                        <span>🛡️ €${entry.insurance.toFixed(2)}</span>
                         <span>⚡ €${entry.power.toFixed(2)}</span>
-                        <span>🔧 €${entry.maintenance.toFixed(2)}</span>
                         <span class="amount red">-€${entry.total.toFixed(2)}</span>
                     `;
                     historyContainer.appendChild(div);
