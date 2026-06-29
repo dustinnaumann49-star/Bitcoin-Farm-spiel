@@ -1478,25 +1478,23 @@
             document.getElementById('batteryStatus').textContent = `${Math.round(state.battery)} Wh / ${totalBattery} Wh`;
             document.getElementById('batteryFill').style.width = `${batteryPercent}%`;
 
+            const powerSource = state.powerSource || 'solar';
             const powerStatus = document.getElementById('powerStatusText');
-            if (production === 0 && consumption === 0) {
-                powerStatus.textContent = '⏸️ Keine Solaranlage und keine Miner';
+            if (minerCount === 0) {
+                powerStatus.textContent = '⏸️ Keine Miner aktiv';
                 powerStatus.style.color = '#8899b3';
-            } else if (production === 0) {
-                powerStatus.textContent = `⛔ Keine Solarproduktion! (${weather.label})`;
-                powerStatus.style.color = '#ff6b6b';
-            } else if (state.battery > 0 && consumption > production) {
-                powerStatus.textContent = `🔋 Batterie wird entladen (${weather.label})`;
-                powerStatus.style.color = '#ffd54f';
-            } else if (production >= consumption && consumption > 0) {
+            } else if (powerSource === 'solar') {
                 powerStatus.textContent = `☀️ Solar deckt den Bedarf (${weather.label})`;
                 powerStatus.style.color = '#81c784';
-            } else if (consumption === 0) {
-                powerStatus.textContent = `☀️ Solar produziert Strom (${weather.label})`;
-                powerStatus.style.color = '#4fc3f7';
-            } else {
-                powerStatus.textContent = `⚠️ Batterie leer! (${weather.label})`;
-                powerStatus.style.color = '#ff6b6b';
+            } else if (powerSource === 'battery') {
+                powerStatus.textContent = `🔋 Batterie springt ein (${weather.label})`;
+                powerStatus.style.color = '#ffd54f';
+            } else if (powerSource === 'mixed') {
+                powerStatus.textContent = `🔋⚡ Solar + Batterie + Netzstrom (${weather.label})`;
+                powerStatus.style.color = '#ffd54f';
+            } else if (powerSource === 'grid') {
+                powerStatus.textContent = `⚡ Netzstrom vom Stadtwerk – Miner laufen! (${weather.label})`;
+                powerStatus.style.color = '#ff9800';
             }
 
             const statusEl = document.getElementById('statusDisplay');
@@ -2132,46 +2130,49 @@
             const consumptionPerSecond = consumption / 3600;
 
             let hasPower = false;
-            let gridNeeded = 0; // Wh die vom Stadtwerk bezogen werden
+            let gridNeeded = 0;
 
-            if (production >= consumption) {
+            if (state.miners.length === 0) {
+                // Keine Miner → nur Batterie laden wenn Solar da
+                if (production > 0) {
+                    state.battery = Math.min(totalBattery, state.battery + productionPerSecond);
+                }
+                hasPower = false;
+            } else if (production >= consumption) {
                 // Solar deckt alles → Überschuss in Batterie
                 state.battery = Math.min(totalBattery, state.battery + productionPerSecond - consumptionPerSecond);
                 hasPower = true;
-                gridNeeded = 0;
             } else {
-                // Solar reicht nicht → erst Batterie nutzen
+                // Solar reicht nicht → erst Solar nutzen, dann Batterie, dann Netz
                 const deficit = consumptionPerSecond - productionPerSecond;
                 if (state.battery >= deficit) {
-                    // Batterie deckt den Rest
+                    // Solar + Batterie deckt alles
                     state.battery = Math.max(0, state.battery - deficit);
                     hasPower = true;
-                    gridNeeded = 0;
                 } else if (state.battery > 0) {
-                    // Batterie fast leer → teilweise Netzstrom
-                    const fromBattery = state.battery;
-                    const fromGrid = deficit - fromBattery;
+                    // Solar + Batterie teilweise → Rest vom Netz
+                    const fromGrid = deficit - state.battery;
                     state.battery = 0;
+                    gridNeeded = fromGrid;
                     hasPower = true;
-                    gridNeeded = fromGrid; // Wh vom Netz
                 } else {
-                    // Batterie leer, kein Solar → voller Netzstrom oder Ausfall
-                    if (consumption > 0 && state.miners.length > 0) {
-                        // Strom aus dem Netz beziehen (kostet Geld)
-                        gridNeeded = consumptionPerSecond;
-                        hasPower = true;
-                    } else {
-                        hasPower = false;
-                    }
+                    // Kein Solar, keine Batterie → alles vom Netz → Miner laufen weiter!
+                    gridNeeded = consumptionPerSecond;
+                    hasPower = true;
                 }
             }
 
-            // Netzstromverbrauch akkumulieren (für Monatsabrechnung)
+            // Netzstromverbrauch akkumulieren
             if (gridNeeded > 0) {
                 state.gridEnergyUsed = (state.gridEnergyUsed || 0) + gridNeeded;
             }
 
-            if (hasPower && getTotalHash() > 0 && state.miners.length > 0) {
+            // Stromquelle für Anzeige merken
+            state.powerSource = production >= consumption ? 'solar' :
+                                gridNeeded > 0 && state.battery === 0 ? 'grid' :
+                                gridNeeded > 0 ? 'mixed' : 'battery';
+
+            if (hasPower && getTotalHash() > 0) {
                 let effectiveTotal = 0;
                 for (let i = 0; i < state.miners.length; i++) effectiveTotal += getMinerEffectiveHash(i);
                 const difficulty = getDifficultyMultiplier();
