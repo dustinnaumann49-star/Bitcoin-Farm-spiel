@@ -1567,12 +1567,17 @@
                 if (hasMiner) {
                     const idx = state.miners[i];
                     const miner = ASIC_MINERS[idx];
-                    const hasPower = production > 0 || state.battery > 0;
+                    const src = state.powerSource;
+                    const hasPower = src === 'solar' || src === 'battery' || src === 'mixed' || src === 'grid';
                     const temp = Math.round(state.minerTemp[i] || 50);
                     const wear = Math.round(state.minerWear[i] || 0);
                     const effectiveHash = getMinerEffectiveHash(i).toFixed(1);
                     let statusClass = hasPower ? 'online' : 'offline';
-                    let statusText = hasPower ? 'Aktiv' : '⛔ Kein Strom';
+                    let statusText = src === 'solar' ? '☀️ Solar'
+                                  : src === 'battery' ? '🔋 Batterie'
+                                  : src === 'mixed' ? '🔋⚡ Gemischt'
+                                  : src === 'grid' ? '⚡ Netzstrom'
+                                  : '⛔ Kein Strom';
                     if (temp >= 90) statusText = '🌡️ Überhitzt';
                     const refund = Math.round(miner.price * 0.5);
                     const repairCost = Math.round(miner.price * 0.05 * wear / 100);
