@@ -506,6 +506,49 @@
             font-size: 11px;
             border: 1px solid #4a6a4a;
         }
+        /* ===== ANIMIERTER HINTERGRUND ===== */
+        @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg);opacity:.15} 50%{transform:translateY(-20px) rotate(180deg);opacity:.3} }
+        @keyframes pulse-ring { 0%{transform:scale(1);opacity:.6} 100%{transform:scale(1.8);opacity:0} }
+        @keyframes miner-glow { 0%,100%{box-shadow:0 0 8px rgba(247,147,26,.2)} 50%{box-shadow:0 0 22px rgba(247,147,26,.55)} }
+        @keyframes coin-pop { 0%{transform:translateY(0) scale(1);opacity:1} 100%{transform:translateY(-80px) scale(1.4);opacity:0} }
+        @keyframes hash-tick { 0%{opacity:1} 50%{opacity:.4} 100%{opacity:1} }
+
+        #bg-canvas { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+        .container { position:relative; z-index:1; }
+
+        /* Mining card glow when active */
+        .miner-card.online { animation: miner-glow 2.4s ease-in-out infinite; }
+        .miner-card.online .mining-pulse {
+            display:inline-block; width:8px; height:8px; border-radius:50%;
+            background:#f7931a; margin-right:6px; position:relative;
+        }
+        .miner-card.online .mining-pulse::after {
+            content:''; position:absolute; inset:-4px; border-radius:50%;
+            border:2px solid #f7931a; animation:pulse-ring 1.2s ease-out infinite;
+        }
+        .miner-card.offline .mining-pulse { display:none; }
+
+        /* Temp bar */
+        .temp-bar-wrap { background:#1a2432; border-radius:4px; height:6px; margin:6px 0 2px; overflow:hidden; }
+        .temp-bar { height:100%; border-radius:4px; transition:width .5s, background .5s; }
+        .wear-bar-wrap { background:#1a2432; border-radius:4px; height:4px; margin:4px 0 2px; overflow:hidden; }
+        .wear-bar { height:100%; border-radius:4px; background:#4fc3f7; transition:width .5s; }
+
+        /* Coin pop animation */
+        .coin-pop { position:fixed; font-size:28px; pointer-events:none; z-index:9999;
+            animation:coin-pop .8s ease-out forwards; }
+
+        /* Dashboard redesign: stat cards */
+        .dash-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
+        .dash-card { background:#141c26; border:1px solid #2a3648; border-radius:12px; padding:12px 14px; }
+        .dash-card .dc-label { font-size:11px; color:#8899b3; margin-bottom:4px; }
+        .dash-card .dc-val { font-size:22px; font-weight:700; color:#e0e6ed; }
+        .dash-card .dc-val.green { color:#81c784; }
+        .dash-card .dc-val.orange { color:#f7931a; }
+        .dash-card .dc-val.yellow { color:#ffd54f; }
+        .dash-card .dc-val.red { color:#ff6b6b; }
+        .dash-card .dc-val.blue { color:#4fc3f7; }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0a0e14; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #2a3648; border-radius: 10px; }
@@ -691,6 +734,7 @@
     </style>
 </head>
 <body>
+    <canvas id="bg-canvas"></canvas>
     <div class="container" id="app">
         <!-- HEADER -->
         <div class="header">
@@ -717,11 +761,18 @@
 
         <!-- ===== SERVER TAB ===== -->
         <div class="tab-content active" id="tab-server">
+            <!-- DASHBOARD STAT CARDS -->
+            <div class="dash-grid">
+                <div class="dash-card"><div class="dc-label">⛏️ Hashrate</div><div class="dc-val orange" id="dashHashrate">0 TH/s</div></div>
+                <div class="dash-card"><div class="dc-label">₿ BTC/Stunde</div><div class="dc-val orange" id="dashBtcHour">0.000000</div></div>
+                <div class="dash-card"><div class="dc-label">🔋 Batterie</div><div class="dc-val blue" id="dashBattery">0%</div></div>
+                <div class="dash-card"><div class="dc-label">☀️ Solar</div><div class="dc-val yellow" id="dashSolar">0 W</div></div>
+                <div class="dash-card"><div class="dc-label">💰 Netto/Tag</div><div class="dc-val green" id="dashNetDay">€0</div></div>
+                <div class="dash-card"><div class="dc-label">📅 Spieltag</div><div class="dc-val" id="dashDay">1</div></div>
+            </div>
             <div style="display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
-                <h3>Mining Rigs · <span id="minerCount">0</span> aktiv</h3>
-                <span class="badge">Max. <span id="maxMinersDisplay">10</span> Rigs</span>
-                <span class="power-total">⚡ <span id="solarCount">0</span> Solaranlagen</span>
-                <span class="power-total">🔋 <span id="batteryPercent">0</span>%</span>
+                <h3>Mining Rigs · <span id="minerCount">0</span> aktiv · Max. <span id="maxMinersDisplay">10</span></h3>
+                <span class="power-total">⚡ <span id="solarCount">0</span> Solar · 🔋 <span id="batteryPercent">0</span>%</span>
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
@@ -1009,6 +1060,9 @@
             weatherHistory: [],
             gameTime: 0,
             speed: 60,
+            minerTemp: [],
+            minerWear: [],
+            notifSent: {},
             lastPaymentDay: 0,
             paymentHistory: [],
             rateHistory: []
@@ -1529,25 +1583,53 @@
                     const idx = state.miners[i];
                     const miner = ASIC_MINERS[idx];
                     const hasPower = production > 0 || state.battery > 0;
+                    const temp = Math.round(state.minerTemp[i] || 50);
+                    const wear = Math.round(state.minerWear[i] || 0);
+                    const effectiveHash = getMinerEffectiveHash(i).toFixed(1);
                     let statusClass = hasPower ? 'online' : 'offline';
-                    let statusText = hasPower ? '✅ Aktiv' : '⛔ Kein Strom';
+                    let statusText = hasPower ? 'Aktiv' : '⛔ Kein Strom';
+                    if (temp >= 90) statusText = '🌡️ Überhitzt';
                     const refund = Math.round(miner.price * 0.5);
+                    const repairCost = Math.round(miner.price * 0.05 * wear / 100);
+
+                    // Temperaturfarbe
+                    const tempColor = temp < 70 ? '#81c784' : temp < 85 ? '#ffd54f' : '#ff6b6b';
+                    const wearColor = wear < 30 ? '#4fc3f7' : wear < 70 ? '#ffd54f' : '#ff6b6b';
 
                     card.className = `miner-card ${statusClass}`;
                     card.innerHTML = `
                         ${miner.image ? `<img src="${miner.image}" alt="${miner.name}" style="width:100%; height:140px; object-fit:contain; border-radius:8px; margin-bottom:10px; background:#0a0e14; padding:6px;">` : ''}
-                        <h3>🖥️ ${miner.name}</h3>
+                        <h3><span class="mining-pulse"></span>${miner.name}</h3>
                         <div class="parts">${miner.desc}</div>
-                        <div class="info">⚡ ${miner.hash} TH/s · ${miner.power}W · ${miner.noise}</div>
-                        <div class="info">Effizienz: ${miner.efficiency} J/TH</div>
-                        <div class="status-badge ${statusClass}">${statusText}</div>
-                        <button class="sell-miner-btn" data-slot="${i}" style="
-                            margin-top:10px; width:100%; padding:8px;
-                            background:rgba(255,100,100,0.15); border:1px solid #ff6b6b;
-                            color:#ff6b6b; border-radius:8px; cursor:pointer; font-size:13px;
-                            font-weight:600; transition:0.2s;">
-                            🔄 Verkaufen (€${refund})
-                        </button>
+                        <div class="info">⚡ ${effectiveHash} / ${miner.hash} TH/s · ${miner.power}W</div>
+
+                        <div style="margin:8px 0 2px; display:flex; justify-content:space-between; font-size:12px;">
+                            <span style="color:#8899b3;">🌡️ Temperatur</span>
+                            <span style="color:${tempColor}; font-weight:600;">${temp}°C</span>
+                        </div>
+                        <div class="temp-bar-wrap"><div class="temp-bar" style="width:${temp}%; background:${tempColor};"></div></div>
+
+                        <div style="margin:6px 0 2px; display:flex; justify-content:space-between; font-size:12px;">
+                            <span style="color:#8899b3;">🔩 Verschleiß</span>
+                            <span style="color:${wearColor}; font-weight:600;">${wear}%</span>
+                        </div>
+                        <div class="wear-bar-wrap"><div class="wear-bar" style="width:${wear}%; background:${wearColor};"></div></div>
+
+                        <div class="status-badge ${statusClass}" style="margin-top:8px;">${statusText}</div>
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px;">
+                            <button class="repair-miner-btn" data-slot="${i}" style="
+                                padding:8px 4px; background:rgba(79,195,247,.15); border:1px solid #4fc3f7;
+                                color:#4fc3f7; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600;"
+                                ${wear === 0 ? 'disabled' : ''}>
+                                🔧 Reparieren${repairCost > 0 ? ` (€${repairCost})` : ''}
+                            </button>
+                            <button class="sell-miner-btn" data-slot="${i}" style="
+                                padding:8px 4px; background:rgba(255,100,100,.15); border:1px solid #ff6b6b;
+                                color:#ff6b6b; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600;">
+                                🔄 Verkaufen (€${refund})
+                            </button>
+                        </div>
                     `;
                 } else {
                     card.className = 'miner-card empty';
@@ -1562,9 +1644,11 @@
 
             // Event-Listener für Verkauf-Buttons
             grid.querySelectorAll('.sell-miner-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    sellMiner(parseInt(this.dataset.slot));
-                });
+                btn.addEventListener('click', function() { sellMiner(parseInt(this.dataset.slot)); });
+            });
+            // Event-Listener für Reparatur-Buttons
+            grid.querySelectorAll('.repair-miner-btn').forEach(btn => {
+                btn.addEventListener('click', function() { repairMiner(parseInt(this.dataset.slot)); });
             });
         }
 
@@ -2028,9 +2112,11 @@
             const hasPower = (production >= consumption) || state.battery > 0;
 
             if (hasPower && getTotalHash() > 0 && state.miners.length > 0) {
-                const hash = getTotalHash();
+                // Effektive Hash-Rate berücksichtigt Temperatur & Verschleiß
+                let effectiveTotal = 0;
+                for (let i = 0; i < state.miners.length; i++) effectiveTotal += getMinerEffectiveHash(i);
                 const difficulty = getDifficultyMultiplier();
-                const mined = (hash / difficulty) * 0.000000000681;
+                const mined = (effectiveTotal / difficulty) * 0.000000000681;
                 state.btc += mined;
                 state.totalMined += mined;
             }
@@ -2186,7 +2272,210 @@
             }, 30000);
         }
 
+        // ============================================================
+        //  ANIMIERTER HINTERGRUND (Canvas Partikel)
+        // ============================================================
+        function initBackground() {
+            const canvas = document.getElementById('bg-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const particles = [];
+            const symbols = ['₿', '⛏', '⚡', '0', '1'];
+
+            function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+            resize();
+            window.addEventListener('resize', resize);
+
+            for (let i = 0; i < 28; i++) {
+                particles.push({
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    sym: symbols[Math.floor(Math.random() * symbols.length)],
+                    size: 10 + Math.random() * 16,
+                    speedY: 0.2 + Math.random() * 0.4,
+                    speedX: (Math.random() - 0.5) * 0.3,
+                    opacity: 0.04 + Math.random() * 0.1,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotSpeed: (Math.random() - 0.5) * 0.01
+                });
+            }
+
+            function drawBg() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (const p of particles) {
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation);
+                    ctx.globalAlpha = p.opacity;
+                    ctx.fillStyle = '#f7931a';
+                    ctx.font = `${p.size}px monospace`;
+                    ctx.fillText(p.sym, 0, 0);
+                    ctx.restore();
+                    p.y -= p.speedY;
+                    p.x += p.speedX;
+                    p.rotation += p.rotSpeed;
+                    if (p.y < -30) p.y = canvas.height + 30;
+                    if (p.x < -30) p.x = canvas.width + 30;
+                    if (p.x > canvas.width + 30) p.x = -30;
+                }
+                requestAnimationFrame(drawBg);
+            }
+            drawBg();
+        }
+
+        // ============================================================
+        //  COIN-POP ANIMATION beim Verkauf
+        // ============================================================
+        function triggerCoinPop(x, y) {
+            for (let i = 0; i < 6; i++) {
+                const el = document.createElement('div');
+                el.className = 'coin-pop';
+                el.textContent = '₿';
+                el.style.left = (x + (Math.random() - 0.5) * 80) + 'px';
+                el.style.top = (y - 20) + 'px';
+                el.style.animationDelay = (i * 0.08) + 's';
+                el.style.color = '#f7931a';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 1000);
+            }
+        }
+
+        // ============================================================
+        //  PUSH-BENACHRICHTIGUNGEN
+        // ============================================================
+        function requestNotifPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        function sendNotif(title, body, tag) {
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+            if (state.notifSent[tag]) return;
+            state.notifSent[tag] = true;
+            new Notification(title, { body, icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">₿</text></svg>' });
+            // Tag nach 5 Min zurücksetzen damit gleiche Notif wieder kommen kann
+            setTimeout(() => { delete state.notifSent[tag]; }, 5 * 60 * 1000);
+        }
+
+        function checkNotifications() {
+            // Batterie leer
+            const totalBattery = getTotalBattery();
+            const pct = totalBattery > 0 ? state.battery / totalBattery : 1;
+            if (pct < 0.05) sendNotif('⚡ Batterie fast leer!', 'Die Batterie ist unter 5% – Mining könnte ausfallen.', 'battery_low');
+
+            // Miner überhitzt
+            for (let i = 0; i < state.miners.length; i++) {
+                const temp = state.minerTemp[i] || 50;
+                if (temp >= 90) sendNotif('🌡️ Miner überhitzt!', `Rig #${i+1} hat ${Math.round(temp)}°C – Leistungsverlust aktiv!`, `overheat_${i}`);
+            }
+
+            // Kurs starker Einbruch
+            if (state.rateHistory.length >= 2) {
+                const last = state.rateHistory[state.rateHistory.length - 1].rate;
+                const prev = state.rateHistory[state.rateHistory.length - 2].rate;
+                const drop = (prev - last) / prev;
+                if (drop > 0.1) sendNotif('📉 BTC Kurs Einbruch!', `Kurs fiel um ${Math.round(drop*100)}% auf €${Math.round(last).toLocaleString()}.`, 'price_crash');
+            }
+        }
+
+        // ============================================================
+        //  TEMPERATUR & VERSCHLEISS
+        // ============================================================
+        function tickMinerCondition() {
+            const hasPower = getTotalProduction() >= getTotalPower() || state.battery > 0;
+
+            for (let i = 0; i < state.miners.length; i++) {
+                // Temperatur init
+                if (state.minerTemp[i] === undefined) state.minerTemp[i] = 50;
+                if (state.minerWear[i] === undefined) state.minerWear[i] = 0;
+
+                if (hasPower) {
+                    // Temp steigt beim Minen, sinkt leicht zufällig (Kühlschwankung)
+                    const weather = getWeather();
+                    const heatFactor = weather.id === 'sunny' ? 1.15 : 1.0; // Sonne heizt mehr
+                    state.minerTemp[i] = Math.min(100, state.minerTemp[i] + (0.002 * heatFactor) - Math.random() * 0.001);
+                    // Verschleiß pro Spielsekunde (0.001% pro Sek → 100% nach ~115 Spieltagen)
+                    state.minerWear[i] = Math.min(100, state.minerWear[i] + 0.0001);
+                } else {
+                    // Kühlt ab wenn kein Strom
+                    state.minerTemp[i] = Math.max(25, state.minerTemp[i] - 0.005);
+                }
+            }
+        }
+
+        // Gibt effektive Hash-Rate eines Miners zurück (reduziert bei Hitze/Verschleiß)
+        function getMinerEffectiveHash(slotIdx) {
+            const idx = state.miners[slotIdx];
+            const miner = ASIC_MINERS[idx];
+            const temp = state.minerTemp[slotIdx] || 50;
+            const wear = state.minerWear[slotIdx] || 0;
+            let factor = 1.0;
+            if (temp > 85) factor -= (temp - 85) / 100;      // Überhitzung: bis -15%
+            factor -= wear / 1000;                              // Verschleiß: bis -10% bei 100%
+            return miner.hash * Math.max(0.5, factor);
+        }
+
+        function repairMiner(slotIdx) {
+            if (slotIdx < 0 || slotIdx >= state.miners.length) return;
+            const miner = ASIC_MINERS[state.miners[slotIdx]];
+            const cost = Math.round(miner.price * 0.05 * (state.minerWear[slotIdx] / 100));
+            if (cost === 0) { alert('Dieser Miner ist noch in gutem Zustand.'); return; }
+            if (!confirm(`🔧 Miner reparieren?\nKosten: €${cost.toLocaleString()}\nVerschleiß wird auf 0% zurückgesetzt.`)) return;
+            if (state.eur < cost) { alert('Nicht genug Geld!'); return; }
+            state.eur -= cost;
+            state.minerWear[slotIdx] = 0;
+            render();
+        }
+
+        // ============================================================
+        //  DASHBOARD STATS UPDATE
+        // ============================================================
+        function updateDashboard() {
+            const totalHash = getTotalHash() / getDifficultyMultiplier();
+            const production = getTotalProduction();
+            const totalBattery = getTotalBattery();
+            const batteryPct = totalBattery > 0 ? Math.round(state.battery / totalBattery * 100) : 0;
+            const btcPerHour = totalHash * 0.000000000681 * 60 * 3600;
+            const dailyBtc = totalHash * 0.0000000588;
+            const dailyRevenue = dailyBtc * getAverageRate();
+            const dailyPowerCost = (getTotalPower() * 24) / 1000 * 0.30;
+            const dailyNet = dailyRevenue - dailyPowerCost;
+            const gameTime = getGameDateTime(state.gameTime);
+
+            const h = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            h('dashHashrate', Math.round(totalHash) + ' TH/s');
+            h('dashBtcHour', btcPerHour.toFixed(6));
+            h('dashBattery', batteryPct + '%');
+            h('dashSolar', production + ' W');
+            h('dashNetDay', '€' + dailyNet.toFixed(0));
+            h('dashDay', gameTime.day);
+
+            // Farbe Netto
+            const el = document.getElementById('dashNetDay');
+            if (el) el.className = 'dc-val ' + (dailyNet >= 0 ? 'green' : 'red');
+            const elBat = document.getElementById('dashBattery');
+            if (elBat) elBat.className = 'dc-val ' + (batteryPct > 30 ? 'blue' : batteryPct > 10 ? 'yellow' : 'red');
+        }
+
         init();
+        initBackground();
+        requestNotifPermission();
+
+        // Coin-Pop beim Verkauf einbinden
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.sell-btn');
+            if (btn) triggerCoinPop(e.clientX, e.clientY);
+        });
+
+        // Dashboard jede Sekunde aktualisieren
+        setInterval(updateDashboard, 1000);
+
+        // Temperatur/Verschleiß alle 10 Spielsekunden
+        setInterval(tickMinerCondition, 1000);
+
+        // Benachrichtigungen alle 30s prüfen
+        setInterval(checkNotifications, 30000);
     </script>
 </body>
 </html>
