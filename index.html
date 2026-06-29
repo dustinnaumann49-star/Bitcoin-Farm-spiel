@@ -1522,12 +1522,8 @@
 
             const effectiveHash = getTotalHash() / getDifficultyMultiplier();
             const dailyBtc = effectiveHash * 0.0000000588;
-            // BTC pro Echtzeit-Stunde: dailyBtc / (86400 Spielsek/Tag / 60x) * 3600
             const btcPerRealHour = dailyBtc / (86400 / 60) * 3600;
             const dailyRevenue = dailyBtc * getAverageRate();
-            // Tageskosten Strom: nur was tatsächlich vom Netz kommt
-            const production = getTotalProduction();
-            const consumption = getTotalPower();
             const gridW = Math.max(0, consumption - production);
             const dailyPowerCost = (gridW * 24) / 1000 * 0.30;
             const dailyNet = dailyRevenue - dailyPowerCost;
