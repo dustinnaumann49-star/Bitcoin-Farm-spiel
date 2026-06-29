@@ -1014,21 +1014,21 @@
         ];
 
         const SOLAR_SYSTEMS = [
-            { name: 'Kleine Anlage 5 kWp', price: 85000, power: 5000, battery: 5000,
+            { name: 'Kleine Anlage 5 kWp', price: 12000, power: 5000, battery: 5000,
                 desc: '5 kWp · 5 kWh Speicher · für kleines Dach',
                 image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&auto=format&fit=crop' },
-            { name: 'Mittel 8 kWp + Speicher', price: 160000, power: 8000, battery: 10000,
+            { name: 'Mittel 8 kWp + Speicher', price: 25000, power: 8000, battery: 10000,
                 desc: '8 kWp · 10 kWh Speicher · für EFH',
                 image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&auto=format&fit=crop' },
-            { name: 'Groß 10 kWp + Speicher', price: 185000, power: 10000, battery: 15000,
+            { name: 'Groß 10 kWp + Speicher', price: 40000, power: 10000, battery: 15000,
                 desc: '10 kWp · 15 kWh Speicher · für großes Dach',
                 image: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=400&auto=format&fit=crop' },
-            { name: 'Profi 15 kWp + Speicher', price: 260000, power: 15000, battery: 20000,
+            { name: 'Profi 15 kWp + Speicher', price: 70000, power: 15000, battery: 20000,
                 desc: '15 kWp · 20 kWh Speicher · für Gewerbe',
                 image: 'https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=400&auto=format&fit=crop' }
         ];
 
-        const SERVER_UPGRADE = { name: 'Mining-Farm Erweiterung', price: 8000, desc: '+1 Rig-Slot (max. 10)' };
+        const SERVER_UPGRADE = { name: 'Mining-Farm Erweiterung', price: 5000, desc: '+1 Rig-Slot (max. 10)' };
 
         // Kühlsysteme: senken die Temperatursteigerungsrate aller Miner
         const COOLING_SYSTEMS = [
@@ -1278,7 +1278,7 @@
         function getSolarCount() { return state.solarSystems.length; }
         function getWeather() { return WEATHER_TYPES[state.weatherIndex]; }
 
-        function getRentCost() { return getMinerCount() * 3000 + 1500; }
+        function getRentCost() { return getMinerCount() * 1500 + 300; }
 
         function getMaintenanceCost() {
             let totalValue = 0;
