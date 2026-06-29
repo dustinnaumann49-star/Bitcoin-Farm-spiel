@@ -1030,6 +1030,22 @@
 
         const SERVER_UPGRADE = { name: 'Mining-Farm Erweiterung', price: 8000, desc: '+1 Rig-Slot (max. 10)' };
 
+        // Kühlsysteme: senken die Temperatursteigerungsrate aller Miner
+        const COOLING_SYSTEMS = [
+            { name: 'Standventilatoren', price: 5000,
+              desc: 'Einfache Ventilatoren · Temp-Anstieg −30%',
+              coolingFactor: 0.30, maxLevel: 1,
+              image: 'https://images.unsplash.com/photo-1587831990711-23ca6441447b?w=200&auto=format&fit=crop' },
+            { name: 'Rack-Kühlsystem', price: 25000,
+              desc: 'Professionelle Rack-Kühlung · Temp-Anstieg −55%',
+              coolingFactor: 0.55, maxLevel: 1,
+              image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=200&auto=format&fit=crop' },
+            { name: 'Wasserkühlung', price: 80000,
+              desc: 'Industrielle Wasserkühlung · Temp-Anstieg −80%',
+              coolingFactor: 0.80, maxLevel: 1,
+              image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=200&auto=format&fit=crop' },
+        ];
+
         const WEATHER_TYPES = [
             { id: 'sunny', icon: '☀️', label: 'Sonnig', production: 1.0, minDuration: 4, maxDuration: 8 },
             { id: 'cloudy', icon: '⛅', label: 'Bewölkt', production: 0.5, minDuration: 2, maxDuration: 6 },
@@ -1063,6 +1079,7 @@
             minerTemp: [],
             minerWear: [],
             notifSent: {},
+            coolingLevel: -1,
             lastPaymentDay: 0,
             paymentHistory: [],
             rateHistory: []
@@ -1713,24 +1730,60 @@
             const upgradeDiv = document.createElement('div');
             upgradeDiv.className = 'shop-item';
             upgradeDiv.style.borderLeftColor = '#4fc3f7';
-            const upgradeDisabled = state.eur < SERVER_UPGRADE.price || state.maxMiners >= 6;
+            const upgradeDisabled = state.eur < SERVER_UPGRADE.price || state.maxMiners >= 10;
             upgradeDiv.innerHTML = `
                 <div class="desc">
                     <strong>🏗️ ${SERVER_UPGRADE.name}</strong>
                     <small>${SERVER_UPGRADE.desc}</small>
                 </div>
-                <span>€${SERVER_UPGRADE.price}</span>
+                <span>€${SERVER_UPGRADE.price.toLocaleString()}</span>
                 <button ${upgradeDisabled ? 'disabled' : ''} data-buy="upgrade">Kaufen</button>
             `;
             container.appendChild(upgradeDiv);
+
+            // Kühlsysteme
+            const coolingCategory = document.createElement('div');
+            coolingCategory.className = 'shop-category';
+            coolingCategory.innerHTML = '<span class="cat-icon">❄️</span> Kühlsysteme';
+            container.appendChild(coolingCategory);
+
+            const installedEl = document.createElement('div');
+            installedEl.style.cssText = 'font-size:13px; color:#81c784; padding:6px 12px 10px; margin-bottom:4px;';
+            installedEl.textContent = state.coolingLevel >= 0
+                ? `✅ Installiert: ${COOLING_SYSTEMS[state.coolingLevel].name} (−${Math.round(COOLING_SYSTEMS[state.coolingLevel].coolingFactor * 100)}% Wärme)`
+                : '❌ Kein Kühlsystem installiert – Miner überhitzen schneller';
+            container.appendChild(installedEl);
+
+            for (let i = 0; i < COOLING_SYSTEMS.length; i++) {
+                const sys = COOLING_SYSTEMS[i];
+                const div = document.createElement('div');
+                div.className = 'shop-item';
+                div.style.borderLeftColor = '#80deea';
+                const alreadyOwned = state.coolingLevel >= i;
+                const canAfford = state.eur >= sys.price;
+                div.innerHTML = `
+                    ${sys.image ? `<img src="${sys.image}" alt="${sys.name}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; flex-shrink:0;">` : ''}
+                    <div class="desc">
+                        <strong>❄️ ${sys.name}</strong>
+                        <small>${sys.desc}</small>
+                    </div>
+                    <span>€${sys.price.toLocaleString()}</span>
+                    <button ${alreadyOwned ? 'disabled' : !canAfford ? 'disabled' : ''} data-buy="cooling" data-idx="${i}">
+                        ${alreadyOwned ? '✅ Installiert' : 'Kaufen'}
+                    </button>
+                `;
+                container.appendChild(div);
+            }
 
             container.querySelectorAll('button[data-buy]').forEach(btn => {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     const type = this.dataset.buy;
-                    if (type === 'miner') { const idx = parseInt(this.dataset.idx);
-                        buyMiner(idx); } else if (type === 'solar') { const idx = parseInt(this.dataset.idx);
-                        buySolarSystem(idx); } else if (type === 'upgrade') { buyUpgrade(); }
+                    const idx = parseInt(this.dataset.idx);
+                    if (type === 'miner') buyMiner(idx);
+                    else if (type === 'solar') buySolarSystem(idx);
+                    else if (type === 'upgrade') buyUpgrade();
+                    else if (type === 'cooling') buyCooling(idx);
                 });
             });
         }
@@ -2014,6 +2067,15 @@
             if (state.eur < SERVER_UPGRADE.price || state.maxMiners >= 10) return;
             state.maxMiners += 1;
             state.eur -= SERVER_UPGRADE.price;
+            render();
+        }
+
+        function buyCooling(idx) {
+            const system = COOLING_SYSTEMS[idx];
+            if (state.eur < system.price) return;
+            if (state.coolingLevel >= idx) { alert('Dieses Kühlsystem oder ein besseres ist bereits installiert.'); return; }
+            state.eur -= system.price;
+            state.coolingLevel = idx;
             render();
         }
 
@@ -2391,11 +2453,12 @@
                 if (state.minerWear[i] === undefined) state.minerWear[i] = 0;
 
                 if (hasPower) {
-                    // Temp steigt beim Minen, sinkt leicht zufällig (Kühlschwankung)
                     const weather = getWeather();
-                    const heatFactor = weather.id === 'sunny' ? 1.15 : 1.0; // Sonne heizt mehr
-                    state.minerTemp[i] = Math.min(100, state.minerTemp[i] + (0.002 * heatFactor) - Math.random() * 0.001);
-                    // Verschleiß pro Spielsekunde (0.001% pro Sek → 100% nach ~115 Spieltagen)
+                    const heatFactor = weather.id === 'sunny' ? 1.15 : 1.0;
+                    // Kühlfaktor aus installiertem Kühlsystem
+                    const cooling = state.coolingLevel >= 0 ? COOLING_SYSTEMS[state.coolingLevel].coolingFactor : 0;
+                    const heatRate = 0.002 * heatFactor * (1 - cooling);
+                    state.minerTemp[i] = Math.min(100, state.minerTemp[i] + heatRate - Math.random() * 0.001);
                     state.minerWear[i] = Math.min(100, state.minerWear[i] + 0.0001);
                 } else {
                     // Kühlt ab wenn kein Strom
