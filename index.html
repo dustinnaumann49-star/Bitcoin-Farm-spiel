@@ -931,8 +931,9 @@
                 </div>
                 <div class="finance-card">
                     <h3>⚡ Strom</h3>
-                    <div class="row"><span class="label">Betrag (monatlich, nach Solar)</span><span class="value red" id="financePowerAmount">€0.00</span></div>
-                    <div class="row"><span class="label">Bruttoverbrauch</span><span class="value yellow" id="financePowerUsage">0 W</span></div>
+                    <div class="row"><span class="label">Netzstrom diesen Monat</span><span class="value red" id="financePowerAmount">€0.00</span></div>
+                    <div class="row"><span class="label">Netzstrom verbraucht</span><span class="value yellow" id="financePowerUsage">0 Wh</span></div>
+                    <div class="row"><span class="label">Aktuell Solar deckt</span><span class="value green" id="financeSolarCoverage">0%</span></div>
                     <div class="row"><span class="label">Nächste Zahlung</span><span class="value yellow" id="financePowerNext">--</span></div>
                     <div class="next-payment">
                         <div class="label">⏳ Countdown</div>
@@ -1080,6 +1081,7 @@
             minerWear: [],
             notifSent: {},
             coolingLevel: -1,
+            gridEnergyUsed: 0,
             lastPaymentDay: 0,
             paymentHistory: [],
             rateHistory: []
@@ -1292,13 +1294,11 @@
             return totalValue * 0.005;
         }
 
+        // Akkumulierter Netzstromverbrauch (Wh) seit letzter Monatsabrechnung
+        // Wird jeden Tick live nachgeführt
         function getPowerCost() {
-            const consumption = getTotalPower();
-            const production = getTotalProduction();
-            // Solar-Deckung: Nur der ungedeckte Netzstrom-Anteil wird berechnet
-            const avgSolarProduction = production * 0.55; // Durchschnittliche Deckung (~55% der Zeit produziert Solar)
-            const netConsumption = Math.max(0, consumption - avgSolarProduction);
-            return (netConsumption * 24 * 30) / 1000 * 0.30;
+            // Nur für Anzeige: basierend auf akkumuliertem Netzstromverbrauch
+            return (state.gridEnergyUsed || 0) / 1000 * 0.30;
         }
 
         function getTotalMonthlyCosts() {
@@ -1420,7 +1420,7 @@
                 const rent = getRentCost();
                 const maintenance = getMaintenanceCost();
                 const insurance = getInsuranceCost();
-                const power = getPowerCost();
+                const power = getPowerCost(); // basiert auf echtem Netzstromverbrauch
                 const total = rent + maintenance + insurance + power;
 
                 if (state.eur >= total) {
@@ -1443,6 +1443,7 @@
                 });
 
                 state.lastPaymentDay = currentDay;
+                state.gridEnergyUsed = 0; // Zähler zurücksetzen für nächsten Monat
                 if (state.paymentHistory.length > 24) state.paymentHistory.shift();
                 render();
             }
@@ -1555,7 +1556,11 @@
             // BTC pro Echtzeit-Stunde: dailyBtc / (86400 Spielsek/Tag / 60x) * 3600
             const btcPerRealHour = dailyBtc / (86400 / 60) * 3600;
             const dailyRevenue = dailyBtc * getAverageRate();
-            const dailyPowerCost = (consumption * 24) / 1000 * 0.30;
+            // Tageskosten Strom: nur was tatsächlich vom Netz kommt
+            const production = getTotalProduction();
+            const consumption = getTotalPower();
+            const gridW = Math.max(0, consumption - production);
+            const dailyPowerCost = (gridW * 24) / 1000 * 0.30;
             const dailyNet = dailyRevenue - dailyPowerCost;
             const monthlyNet = dailyNet * 30 - getTotalMonthlyCosts();
             const tax = getTaxOnProfit(monthlyNet > 0 ? monthlyNet : 0);
@@ -1980,8 +1985,13 @@
             document.getElementById('financeInsuranceNext').textContent = nextDateStr;
             document.getElementById('financeInsuranceCountdown').textContent = `${daysUntilPayment} Tage`;
 
-            document.getElementById('financePowerAmount').textContent = `€${power.toFixed(2)}`;
-            document.getElementById('financePowerUsage').textContent = `${getTotalPower()} W`;
+            document.getElementById('financePowerAmount').textContent = `€${getPowerCost().toFixed(2)}`;
+            document.getElementById('financePowerUsage').textContent = `${Math.round(state.gridEnergyUsed || 0)} Wh`;
+            const prod = getTotalProduction();
+            const cons = getTotalPower();
+            const coverage = cons > 0 ? Math.min(100, Math.round(prod / cons * 100)) : 100;
+            const covEl = document.getElementById('financeSolarCoverage');
+            if (covEl) { covEl.textContent = coverage + '%'; covEl.style.color = coverage >= 100 ? '#81c784' : coverage >= 50 ? '#ffd54f' : '#ff6b6b'; }
             document.getElementById('financePowerNext').textContent = nextDateStr;
             document.getElementById('financePowerCountdown').textContent = `${daysUntilPayment} Tage`;
 
@@ -2161,20 +2171,50 @@
             const production = getTotalProduction();
             const consumption = getTotalPower();
             const totalBattery = getTotalBattery();
-
             const productionPerSecond = production / 3600;
             const consumptionPerSecond = consumption / 3600;
 
+            let hasPower = false;
+            let gridNeeded = 0; // Wh die vom Stadtwerk bezogen werden
+
             if (production >= consumption) {
+                // Solar deckt alles → Überschuss in Batterie
                 state.battery = Math.min(totalBattery, state.battery + productionPerSecond - consumptionPerSecond);
+                hasPower = true;
+                gridNeeded = 0;
             } else {
-                state.battery = Math.max(0, state.battery - (consumptionPerSecond - productionPerSecond));
+                // Solar reicht nicht → erst Batterie nutzen
+                const deficit = consumptionPerSecond - productionPerSecond;
+                if (state.battery >= deficit) {
+                    // Batterie deckt den Rest
+                    state.battery = Math.max(0, state.battery - deficit);
+                    hasPower = true;
+                    gridNeeded = 0;
+                } else if (state.battery > 0) {
+                    // Batterie fast leer → teilweise Netzstrom
+                    const fromBattery = state.battery;
+                    const fromGrid = deficit - fromBattery;
+                    state.battery = 0;
+                    hasPower = true;
+                    gridNeeded = fromGrid; // Wh vom Netz
+                } else {
+                    // Batterie leer, kein Solar → voller Netzstrom oder Ausfall
+                    if (consumption > 0 && state.miners.length > 0) {
+                        // Strom aus dem Netz beziehen (kostet Geld)
+                        gridNeeded = consumptionPerSecond;
+                        hasPower = true;
+                    } else {
+                        hasPower = false;
+                    }
+                }
             }
 
-            const hasPower = (production >= consumption) || state.battery > 0;
+            // Netzstromverbrauch akkumulieren (für Monatsabrechnung)
+            if (gridNeeded > 0) {
+                state.gridEnergyUsed = (state.gridEnergyUsed || 0) + gridNeeded;
+            }
 
             if (hasPower && getTotalHash() > 0 && state.miners.length > 0) {
-                // Effektive Hash-Rate berücksichtigt Temperatur & Verschleiß
                 let effectiveTotal = 0;
                 for (let i = 0; i < state.miners.length; i++) effectiveTotal += getMinerEffectiveHash(i);
                 const difficulty = getDifficultyMultiplier();
