@@ -1038,33 +1038,42 @@
         // ============================================================
         //  STATE
         // ============================================================
-        let state = {
-            btc: 0,
-            eur: 80000,
-            miners: [0],
-            solarSystems: [1],
-            battery: 10000,
-            maxMiners: 4,
-            dealerRates: [0, 0, 0, 0],
-            dealerTimer: 24 * 60 * 60,
-            lastTick: Date.now(),
-            lastSave: Date.now(),
-            difficulty: 1.0,
-            totalMined: 0,
-            weatherIndex: 0,
-            weatherTimer: 4 * 3600,
-            weatherHistory: [],
-            gameTime: 0,
-            speed: 60,
-            minerTemp: [],
-            minerWear: [],
-            notifSent: {},
-            coolingLevel: -1,
-            gridEnergyUsed: 0,
-            lastPaymentDay: 0,
-            paymentHistory: [],
-            rateHistory: []
-        };
+        function getInitialState() {
+            return {
+                btc: 0,
+                eur: 80000,
+                miners: [0],
+                solarSystems: [1],
+                battery: 10000,
+                maxMiners: 4,
+                dealerRates: [0, 0, 0, 0],
+                dealerTimer: 24 * 60 * 60,
+                lastTick: Date.now(),
+                lastSave: Date.now(),
+                difficulty: 1.0,
+                totalMined: 0,
+                weatherIndex: 0,
+                weatherTimer: 4 * 3600,
+                weatherHistory: [],
+                gameTime: 0,
+                speed: 60,
+                minerTemp: [],
+                minerWear: [],
+                notifSent: {},
+                coolingLevel: -1,
+                gridEnergyUsed: 0,
+                lastPaymentDay: 0,
+                paymentHistory: [],
+                rateHistory: [],
+                btcPrice: 55000,
+                marketPhase: 'sideways',
+                marketPhaseDaysLeft: 7,
+                marketVolatility: 0.03,
+                powerSource: 'solar'
+            };
+        }
+
+        let state = getInitialState();
 
         const SAVE_KEY = 'btc_miner_final_v4';
 
@@ -2247,27 +2256,18 @@
         //  RESET
         // ============================================================
         function resetGame() {
-            state.btc = 0;
-            state.eur = 80000;
-            state.miners = [0];
-            state.solarSystems = [1];
-            state.battery = 10000;
-            state.maxMiners = 4;
-            state.dealerRates = [0, 0, 0, 0];
-            state.dealerTimer = 24 * 60 * 60;
-            state.lastTick = Date.now();
-            state.lastSave = Date.now();
-            state.difficulty = 1.0;
-            state.totalMined = 0;
-            state.weatherHistory = [];
-            state.weatherIndex = 0;
-            state.weatherTimer = 4 * 3600;
-            state.gameTime = 0;
-            state.lastPaymentDay = 0;
-            state.paymentHistory = [];
-            state.rateHistory = [];
+            if (!confirm('🔄 Spiel wirklich neu starten?\n\nAlle Fortschritte gehen verloren: Bitcoin, Geld, Miner, Solaranlagen, Kühlsystem, Verschleiß und Netzstromkosten werden komplett zurückgesetzt.')) return;
+
+            // Kompletter State-Reset: garantiert dass WIRKLICH alle Felder zurückgesetzt werden
+            // (Kühlsystem, Netzstromzähler, Temperatur, Verschleiß, Marktphase, etc.)
+            const fresh = getInitialState();
+            for (const key in state) delete state[key];
+            Object.assign(state, fresh);
+
             tickCounter = 0;
+            dealerBuilt = false;
             generateRates();
+            changeWeather();
             render();
             saveGame();
         }
