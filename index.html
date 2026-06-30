@@ -513,6 +513,60 @@
         @keyframes coin-pop { 0%{transform:translateY(0) scale(1);opacity:1} 100%{transform:translateY(-80px) scale(1.4);opacity:0} }
         @keyframes hash-tick { 0%{opacity:1} 50%{opacity:.4} 100%{opacity:1} }
 
+        /* ===== WETTERKARTE DEUTSCHLAND ===== */
+        .weather-map-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+            margin: 0 auto;
+            aspect-ratio: 1 / 1.15;
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(180deg, #1a2840 0%, #0e1622 100%);
+        }
+        .weather-map-wrap.sunny { background: linear-gradient(180deg, #2d4a6e 0%, #1a3252 100%); }
+        .weather-map-wrap.cloudy { background: linear-gradient(180deg, #2a3442 0%, #1c242e 100%); }
+        .weather-map-wrap.rainy { background: linear-gradient(180deg, #1c2836 0%, #11181f 100%); }
+        .weather-map-wrap.night { background: linear-gradient(180deg, #0a0f1c 0%, #050810 100%); }
+
+        .de-map-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .de-shape { fill: #3a5a7a; stroke: #5a82a8; stroke-width: 1.5; transition: fill 1s; }
+        .weather-map-wrap.sunny .de-shape { fill: #4a7a4a; }
+        .weather-map-wrap.cloudy .de-shape { fill: #455a6a; }
+        .weather-map-wrap.rainy .de-shape { fill: #2e4658; }
+        .weather-map-wrap.night .de-shape { fill: #2a3550; }
+
+        .sun-glow { position:absolute; top:8%; right:14%; width:70px; height:70px; border-radius:50%;
+            background: radial-gradient(circle, #ffe066 0%, #ffb84d 60%, transparent 75%);
+            opacity: 0; transition: opacity 1s; filter: blur(1px); }
+        .weather-map-wrap.sunny .sun-glow { opacity: 1; animation: sun-pulse 3s ease-in-out infinite; }
+        @keyframes sun-pulse { 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+
+        .cloud { position:absolute; opacity:0; transition:opacity 1s; }
+        .weather-map-wrap.cloudy .cloud, .weather-map-wrap.rainy .cloud { opacity:1; }
+        .cloud-1 { top:10%; left:5%; width:110px; animation: cloud-drift 18s linear infinite; }
+        .cloud-2 { top:18%; left:45%; width:90px; animation: cloud-drift 24s linear infinite reverse; }
+        .cloud-3 { top:6%; left:60%; width:70px; animation: cloud-drift 14s linear infinite; }
+        @keyframes cloud-drift { 0%{transform:translateX(-20px);} 50%{transform:translateX(20px);} 100%{transform:translateX(-20px);} }
+
+        .rain-layer { position:absolute; inset:0; opacity:0; transition:opacity .8s; pointer-events:none; overflow:hidden; }
+        .weather-map-wrap.rainy .rain-layer { opacity:1; }
+        .raindrop { position:absolute; width:2px; height:14px; background:linear-gradient(180deg, transparent, #7fc8ff); top:-20px; animation: rain-fall linear infinite; }
+        @keyframes rain-fall { from{ transform:translateY(-20px);} to{ transform:translateY(420px);} }
+
+        .star { position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:0; transition:opacity 1.5s; }
+        .weather-map-wrap.night .star { opacity:1; animation: star-twinkle 3s ease-in-out infinite; }
+        @keyframes star-twinkle { 0%,100%{opacity:.3;} 50%{opacity:1;} }
+        .moon-glow { position:absolute; top:10%; right:16%; width:46px; height:46px; border-radius:50%;
+            background: radial-gradient(circle at 35% 35%, #f5f0dc 0%, #d8d4bc 70%, transparent 80%);
+            opacity:0; transition:opacity 1.5s; box-shadow: 0 0 24px rgba(245,240,220,0.35); }
+        .weather-map-wrap.night .moon-glow { opacity: 1; }
+
+        .weather-map-label {
+            position:absolute; bottom:10px; left:0; right:0; text-align:center;
+            font-size:13px; color:rgba(255,255,255,0.65); letter-spacing:0.5px;
+        }
+
         #bg-canvas { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; }
         .container { position:relative; z-index:1; }
 
@@ -888,14 +942,42 @@
         <div class="tab-content" id="tab-weather">
             <h3>🌦️ Wetterbericht <span class="price-update">(beeinflusst die Solarproduktion)</span></h3>
 
-            <div style="background:#1a2432; border-radius:12px; padding:20px; margin-bottom:15px; border:1px solid #2a3648; text-align:center;">
-                <div style="font-size:56px;" id="weatherTabIcon">☀️</div>
-                <div style="font-size:22px; font-weight:700; color:#e0e6ed; margin-top:6px;" id="weatherTabLabel">Sonnig</div>
-                <div style="font-size:14px; color:#8899b3; margin-top:4px;">Solarproduktion: <span id="weatherTabProduction" style="color:#ffd54f; font-weight:600;">100%</span></div>
-                <div style="font-size:13px; color:#8899b3; margin-top:2px;">Nächster Wechsel in: <span id="weatherTabChange">--</span></div>
+            <div class="weather-map-wrap" id="weatherMapWrap">
+                <svg class="de-map-svg" viewBox="0 0 300 345" preserveAspectRatio="xMidYMid meet">
+                    <path class="de-shape" d="M 120 8 L 140 6 L 155 15 L 170 12 L 185 22 L 200 20 L 210 32 L 225 30 L 232 45 L 248 50 L 250 65 L 240 78 L 248 90 L 244 105 L 255 118 L 250 132 L 260 145 L 255 160 L 262 175 L 255 190 L 260 205 L 250 218 L 252 235 L 240 248 L 244 262 L 230 272 L 232 288 L 215 298 L 210 312 L 192 318 L 185 332 L 165 330 L 155 340 L 138 332 L 120 335 L 108 320 L 90 315 L 82 298 L 65 290 L 60 272 L 45 262 L 48 245 L 35 232 L 42 215 L 32 198 L 42 182 L 35 165 L 48 150 L 42 132 L 55 118 L 50 100 L 65 88 L 62 70 L 78 58 L 80 40 L 98 32 L 100 18 Z"/>
+                </svg>
+
+                <div class="sun-glow"></div>
+                <div class="moon-glow"></div>
+
+                <div class="cloud cloud-1">
+                    <svg viewBox="0 0 100 50" width="100%"><ellipse cx="30" cy="30" rx="28" ry="16" fill="#c8d4e0" opacity="0.8"/><ellipse cx="55" cy="22" rx="22" ry="18" fill="#c8d4e0" opacity="0.8"/><ellipse cx="75" cy="32" rx="20" ry="14" fill="#c8d4e0" opacity="0.8"/></svg>
+                </div>
+                <div class="cloud cloud-2">
+                    <svg viewBox="0 0 100 50" width="100%"><ellipse cx="30" cy="30" rx="26" ry="15" fill="#b8c4d2" opacity="0.7"/><ellipse cx="55" cy="22" rx="20" ry="16" fill="#b8c4d2" opacity="0.7"/><ellipse cx="72" cy="30" rx="18" ry="13" fill="#b8c4d2" opacity="0.7"/></svg>
+                </div>
+                <div class="cloud cloud-3">
+                    <svg viewBox="0 0 100 50" width="100%"><ellipse cx="30" cy="30" rx="24" ry="14" fill="#a8b8c8" opacity="0.6"/><ellipse cx="55" cy="22" rx="18" ry="14" fill="#a8b8c8" opacity="0.6"/></svg>
+                </div>
+
+                <div class="rain-layer" id="rainLayer"></div>
+                <div id="starLayer"></div>
+
+                <div class="weather-map-label" id="weatherMapLabel">Deutschland · Sonnig</div>
             </div>
 
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:10px; margin-bottom:15px;">
+            <div style="display:flex; justify-content:center; gap:24px; margin:14px 0; flex-wrap:wrap;">
+                <div style="text-align:center;">
+                    <div style="font-size:12px; color:#8899b3;">Solarproduktion</div>
+                    <div style="font-size:20px; font-weight:700; color:#ffd54f;" id="weatherTabProduction">100%</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:12px; color:#8899b3;">Nächster Wechsel</div>
+                    <div style="font-size:20px; font-weight:700; color:#e0e6ed;" id="weatherTabChange">--</div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:10px; margin:15px 0;">
                 <div style="background:#1a2432; border-radius:12px; padding:14px; border:1px solid #2a3648; text-align:center;">
                     <div style="font-size:24px;">☀️</div>
                     <div style="font-size:13px; color:#8899b3; margin-top:4px;">Sonnig</div>
@@ -1477,9 +1559,46 @@
             const weather = getWeather();
             const peakProduction = getTotalPeakProduction();
 
-            // Aktuelles Wetter
-            document.getElementById('weatherTabIcon').textContent = weather.icon;
-            document.getElementById('weatherTabLabel').textContent = weather.label;
+            // Karte: Wetter-Klasse setzen (steuert CSS-Hintergrund + Effekte)
+            const mapWrap = document.getElementById('weatherMapWrap');
+            if (mapWrap && mapWrap.dataset.currentWeather !== weather.id) {
+                mapWrap.className = 'weather-map-wrap ' + weather.id;
+                mapWrap.dataset.currentWeather = weather.id;
+
+                // Regen neu aufbauen nur bei Wechsel zu/von Regen
+                const rainLayer = document.getElementById('rainLayer');
+                if (weather.id === 'rainy' && rainLayer.children.length === 0) {
+                    let rainHtml = '';
+                    for (let i = 0; i < 40; i++) {
+                        const left = Math.random() * 100;
+                        const delay = Math.random() * 1.2;
+                        const duration = 0.6 + Math.random() * 0.5;
+                        rainHtml += `<div class="raindrop" style="left:${left}%; animation-delay:${delay}s; animation-duration:${duration}s;"></div>`;
+                    }
+                    rainLayer.innerHTML = rainHtml;
+                } else if (weather.id !== 'rainy') {
+                    rainLayer.innerHTML = '';
+                }
+
+                // Sterne neu aufbauen nur bei Wechsel zu/von Nacht
+                const starLayer = document.getElementById('starLayer');
+                if (weather.id === 'night' && starLayer.children.length === 0) {
+                    let starHtml = '';
+                    for (let i = 0; i < 35; i++) {
+                        const top = Math.random() * 70;
+                        const left = Math.random() * 100;
+                        const delay = Math.random() * 3;
+                        starHtml += `<div class="star" style="top:${top}%; left:${left}%; animation-delay:${delay}s;"></div>`;
+                    }
+                    starLayer.innerHTML = starHtml;
+                } else if (weather.id !== 'night') {
+                    starLayer.innerHTML = '';
+                }
+            }
+
+            const labelEl = document.getElementById('weatherMapLabel');
+            if (labelEl) labelEl.textContent = `Deutschland · ${weather.label}`;
+
             document.getElementById('weatherTabProduction').textContent = Math.round(weather.production * 100) + '%';
 
             const remainingSecs = Math.max(0, Math.floor(state.weatherTimer));
