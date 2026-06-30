@@ -1033,12 +1033,15 @@
             { id: 'night', icon: '🌙', label: 'Nacht', production: 0.0, minDuration: 6, maxDuration: 10 }
         ];
 
-        const START_DATE = new Date(2026, 0, 1);
+        // Startdatum = heute um Mitternacht, damit Tag 1 mit dem echten Kalender übereinstimmt
+        const TODAY = new Date();
+        const START_DATE = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
 
         // ============================================================
         //  STATE
         // ============================================================
         function getInitialState() {
+            const now = new Date();
             return {
                 btc: 0,
                 eur: 80000,
@@ -1055,7 +1058,7 @@
                 weatherIndex: 0,
                 weatherTimer: 4 * 3600,
                 weatherHistory: [],
-                gameTime: 0,
+                gameTime: now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds(),
                 speed: 1, // Echtzeit: 1 Spielsekunde = 1 Echtzeit-Sekunde
                 minerTemp: [],
                 minerWear: [],
