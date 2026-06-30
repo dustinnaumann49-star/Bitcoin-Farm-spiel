@@ -1177,7 +1177,7 @@
                 if (gameDaysPassed > 0) {
                     const monthlyRent = getRentCost();
                     const monthlyPower = getPowerCost();
-                    const monthlyTotal = monthlyRent + monthlyMaintenance + monthlyPower;
+                    const monthlyTotal = monthlyRent + monthlyPower;
                     const dailyCost = monthlyTotal / 30;
                     state.eur -= dailyCost * gameDaysPassed;
                 }
