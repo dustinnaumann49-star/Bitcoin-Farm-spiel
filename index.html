@@ -745,7 +745,7 @@
                 <span class="power">⚡ <span id="powerDisplay">0</span> W</span>
                 <span class="battery">🔋 <span id="batteryDisplay">0</span> Wh</span>
                 <span class="hash">⚡ <span id="hashDisplay">0</span> TH/s</span>
-                <span class="time">⏱️ <span id="timeDisplay">Tag 1</span></span>
+                <span class="time">📅 <span id="timeDisplay">--.--.----</span></span>
                 <span class="offline" id="offlineDisplay">🟢 Online</span>
                 <span class="status" id="statusDisplay">✅ Aktiv</span>
             </div>
@@ -1465,7 +1465,7 @@
             document.getElementById('solarCount').textContent = solarCount;
             document.getElementById('batteryPercent').textContent = batteryPercent;
             document.getElementById('minerCount').textContent = minerCount;
-            document.getElementById('timeDisplay').textContent = `Tag ${gameTime.day}`;
+            document.getElementById('timeDisplay').textContent = gameTime.date;
 
             document.getElementById('gameDateDisplay').textContent = gameTime.date;
             document.getElementById('gameTimeDisplay').textContent = gameTime.time;
