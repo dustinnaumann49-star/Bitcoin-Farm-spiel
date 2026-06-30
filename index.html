@@ -756,6 +756,7 @@
             <button class="tab-btn active" data-tab="server">🏭 Mining Rigs</button>
             <button class="tab-btn" data-tab="shop">🛒 Shop</button>
             <button class="tab-btn" data-tab="dealer">📈 Händler</button>
+            <button class="tab-btn" data-tab="weather">🌦️ Wetter</button>
             <button class="tab-btn" data-tab="finance">💰 Finanzen</button>
         </div>
 
@@ -883,6 +884,55 @@
             </div>
         </div>
 
+        <!-- ===== WETTER TAB ===== -->
+        <div class="tab-content" id="tab-weather">
+            <h3>🌦️ Wetterbericht <span class="price-update">(beeinflusst die Solarproduktion)</span></h3>
+
+            <div style="background:#1a2432; border-radius:12px; padding:20px; margin-bottom:15px; border:1px solid #2a3648; text-align:center;">
+                <div style="font-size:56px;" id="weatherTabIcon">☀️</div>
+                <div style="font-size:22px; font-weight:700; color:#e0e6ed; margin-top:6px;" id="weatherTabLabel">Sonnig</div>
+                <div style="font-size:14px; color:#8899b3; margin-top:4px;">Solarproduktion: <span id="weatherTabProduction" style="color:#ffd54f; font-weight:600;">100%</span></div>
+                <div style="font-size:13px; color:#8899b3; margin-top:2px;">Nächster Wechsel in: <span id="weatherTabChange">--</span></div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:10px; margin-bottom:15px;">
+                <div style="background:#1a2432; border-radius:12px; padding:14px; border:1px solid #2a3648; text-align:center;">
+                    <div style="font-size:24px;">☀️</div>
+                    <div style="font-size:13px; color:#8899b3; margin-top:4px;">Sonnig</div>
+                    <div style="font-size:18px; font-weight:700; color:#ffd54f;" id="weatherStatSunny">0%</div>
+                </div>
+                <div style="background:#1a2432; border-radius:12px; padding:14px; border:1px solid #2a3648; text-align:center;">
+                    <div style="font-size:24px;">⛅</div>
+                    <div style="font-size:13px; color:#8899b3; margin-top:4px;">Bewölkt</div>
+                    <div style="font-size:18px; font-weight:700; color:#90a4ae;" id="weatherStatCloudy">0%</div>
+                </div>
+                <div style="background:#1a2432; border-radius:12px; padding:14px; border:1px solid #2a3648; text-align:center;">
+                    <div style="font-size:24px;">🌧️</div>
+                    <div style="font-size:13px; color:#8899b3; margin-top:4px;">Regen</div>
+                    <div style="font-size:18px; font-weight:700; color:#4fc3f7;" id="weatherStatRainy">0%</div>
+                </div>
+                <div style="background:#1a2432; border-radius:12px; padding:14px; border:1px solid #2a3648; text-align:center;">
+                    <div style="font-size:24px;">🌙</div>
+                    <div style="font-size:13px; color:#8899b3; margin-top:4px;">Nacht</div>
+                    <div style="font-size:18px; font-weight:700; color:#7986cb;" id="weatherStatNight">0%</div>
+                </div>
+            </div>
+
+            <div style="background:#1a2432; border-radius:12px; padding:15px; margin-bottom:15px; border:1px solid #2a3648;">
+                <h3 style="color:#b0c4de; margin-bottom:10px;">☀️ Solarertrag nach Wetterlage (aktuelle Anlage)</h3>
+                <div id="weatherYieldTable" style="font-size:13px;"></div>
+            </div>
+
+            <div class="dealer-history">
+                <h3>🕑 Wetter-Verlauf (letzte 15 Wechsel)</h3>
+                <div class="history-grid" id="weatherHistoryGrid"></div>
+            </div>
+
+            <div style="margin-top:15px; padding:12px; background:#1a2432; border-radius:12px; border:1px solid #2a3648;">
+                <p style="color:#8899b3; font-size:13px;">💡 <strong>Tipp:</strong> Nachts (21–6 Uhr) produziert Solar nichts. Eine größere Batterie überbrückt diese Zeit ohne Netzstrom zu beziehen.</p>
+            </div>
+        </div>
+
         <!-- ===== FINANZEN TAB ===== -->
         <div class="tab-content" id="tab-finance">
             <h3>💰 Finanzübersicht <span class="price-update">(Zahlungen immer am 1. des Monats)</span></h3>
@@ -951,6 +1001,10 @@
             <button class="mob-tab" data-tab="dealer">
                 <span class="mob-icon">📈</span>
                 <span>Händler</span>
+            </button>
+            <button class="mob-tab" data-tab="weather">
+                <span class="mob-icon">🌦️</span>
+                <span>Wetter</span>
             </button>
             <button class="mob-tab" data-tab="finance">
                 <span class="mob-icon">💰</span>
@@ -1417,6 +1471,63 @@
         }
 
         // ============================================================
+        //  RENDER WETTER TAB
+        // ============================================================
+        function renderWeatherTab() {
+            const weather = getWeather();
+            const peakProduction = getTotalPeakProduction();
+
+            // Aktuelles Wetter
+            document.getElementById('weatherTabIcon').textContent = weather.icon;
+            document.getElementById('weatherTabLabel').textContent = weather.label;
+            document.getElementById('weatherTabProduction').textContent = Math.round(weather.production * 100) + '%';
+
+            const remainingSecs = Math.max(0, Math.floor(state.weatherTimer));
+            const remHours = Math.floor(remainingSecs / 3600);
+            const remMins = Math.floor((remainingSecs % 3600) / 60);
+            document.getElementById('weatherTabChange').textContent =
+                remHours > 0 ? `~${remHours}h ${remMins}min` : `~${remMins}min`;
+
+            // Statistik (Verlauf-basiert)
+            const stats = getWeatherStats();
+            document.getElementById('weatherStatSunny').textContent = Math.round(stats.sunny * 100) + '%';
+            document.getElementById('weatherStatCloudy').textContent = Math.round(stats.cloudy * 100) + '%';
+            document.getElementById('weatherStatRainy').textContent = Math.round(stats.rainy * 100) + '%';
+            document.getElementById('weatherStatNight').textContent = Math.round(stats.night * 100) + '%';
+
+            // Solarertrag-Tabelle je Wettertyp (mit aktueller Anlage)
+            const yieldEl = document.getElementById('weatherYieldTable');
+            const rows = WEATHER_TYPES.map(w => {
+                const watts = Math.round(peakProduction * w.production);
+                const kwhPerDay = (watts * 24) / 1000;
+                return `
+                    <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #2a3648;">
+                        <span>${w.icon} ${w.label}</span>
+                        <span style="color:#8899b3;">${watts} W</span>
+                        <span style="color:#ffd54f; font-weight:600;">${kwhPerDay.toFixed(1)} kWh/Tag</span>
+                    </div>
+                `;
+            }).join('');
+            yieldEl.innerHTML = rows;
+
+            // Wetter-Verlauf (letzte 15)
+            const historyEl = document.getElementById('weatherHistoryGrid');
+            const iconMap = { sunny: '☀️', cloudy: '⛅', rainy: '🌧️', night: '🌙' };
+            const labelMap = { sunny: 'Sonnig', cloudy: 'Bewölkt', rainy: 'Regen', night: 'Nacht' };
+            const recent = state.weatherHistory.slice(-15).reverse();
+            if (recent.length === 0) {
+                historyEl.innerHTML = '<div style="color:#8899b3; text-align:center; padding:10px;">Noch keine Wetterdaten</div>';
+            } else {
+                historyEl.innerHTML = recent.map(w => `
+                    <div class="history-item">
+                        <div>${iconMap[w] || '❓'}</div>
+                        <div class="price">${labelMap[w] || w}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // ============================================================
         //  FINANZEN
         // ============================================================
         function processMonthlyPayments() {
@@ -1466,6 +1577,8 @@
             renderShop();
             updateDealerStats(); // nur Kurs/BTC-Balance updaten, nie das Input-Feld
             renderFinance();
+            const weatherTab = document.getElementById('tab-weather');
+            if (weatherTab && weatherTab.classList.contains('active')) renderWeatherTab();
             saveGame();
         }
 
@@ -2319,6 +2432,7 @@
                 server: document.getElementById('tab-server'),
                 shop: document.getElementById('tab-shop'),
                 dealer: document.getElementById('tab-dealer'),
+                weather: document.getElementById('tab-weather'),
                 finance: document.getElementById('tab-finance')
             };
 
@@ -2331,6 +2445,7 @@
                 if (tabContents[tabId]) tabContents[tabId].classList.add('active');
                 // Dealer-Tab: Input-Felder nur beim Öffnen neu bauen
                 if (tabId === 'dealer') renderDealer();
+                if (tabId === 'weather') renderWeatherTab();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
