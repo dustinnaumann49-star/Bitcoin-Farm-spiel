@@ -779,7 +779,7 @@
                 <div class="game-clock">
                     <div class="date-box">📅 <strong id="gameDateDisplay">01.01.2026</strong></div>
                     <div class="time-box">⏱️ <strong id="gameTimeDisplay">00:00</strong></div>
-                    <span class="speed-label">60x</span>
+                    <span class="speed-label">Echtzeit</span>
                     <span class="offline-badge" id="offlineBadge">⏳ Kein Offline-Mining</span>
                 </div>
             </div>
@@ -963,7 +963,7 @@
         <div class="footer">
             <button class="reset-btn" id="resetBtn">🔄 Neustart</button>
             <div style="display:flex; gap:8px; align-items:center;">
-                <span style="color:#8899b3; font-size:13px;">⚡ 1 Sekunde = <span style="color:#ffd54f; font-weight:600;">60</span> Sekunden im Spiel</span>
+                <span style="color:#8899b3; font-size:13px;">⚡ Das Spiel läuft in <span style="color:#ffd54f; font-weight:600;">Echtzeit</span> – 1 Sekunde = 1 Sekunde im Spiel</span>
             </div>
         </div>
     </div>
@@ -1056,7 +1056,7 @@
                 weatherTimer: 4 * 3600,
                 weatherHistory: [],
                 gameTime: 0,
-                speed: 60,
+                speed: 1, // Echtzeit: 1 Spielsekunde = 1 Echtzeit-Sekunde
                 minerTemp: [],
                 minerWear: [],
                 notifSent: {},
@@ -1119,8 +1119,8 @@
         function processOfflineFarming() {
             const now = Date.now();
             const realSeconds = (now - state.lastSave) / 1000;
-            // Offline-Zeit mit Spielgeschwindigkeit multiplizieren
-            const gameSeconds = realSeconds * 60;
+            // Echtzeit: 1 Spielsekunde = 1 Echtzeit-Sekunde, kein Multiplikator nötig
+            const gameSeconds = realSeconds * state.speed;
 
             // Timestamp sofort aktualisieren und speichern damit er korrekt ist
             state.lastSave = now;
@@ -1175,7 +1175,7 @@
             const textEl = document.getElementById('offlineMinedText');
 
             if (hash > 0 && hasPower && state.miners.length > 0) {
-                const minedPerGameSecond = (hash / difficulty) * 0.000000000681;
+                const minedPerGameSecond = (hash / difficulty) * 0.00000004086;
                 const mined = minedPerGameSecond * gameSeconds;
 
                 state.btc += mined;
@@ -1528,8 +1528,8 @@
             }
 
             const effectiveHash = getTotalHash() / getDifficultyMultiplier();
-            const dailyBtc = effectiveHash * 0.0000000588;
-            const btcPerRealHour = dailyBtc / (86400 / 60) * 3600;
+            const dailyBtc = effectiveHash * 0.000003528;
+            const btcPerRealHour = dailyBtc / 24;
             const dailyRevenue = dailyBtc * getAverageRate();
             const gridW = Math.max(0, consumption - production);
             const dailyPowerCost = (gridW * 24) / 1000 * 0.30;
@@ -2190,7 +2190,7 @@
                 let effectiveTotal = 0;
                 for (let i = 0; i < state.miners.length; i++) effectiveTotal += getMinerEffectiveHash(i);
                 const difficulty = getDifficultyMultiplier();
-                const mined = (effectiveTotal / difficulty) * 0.000000000681;
+                const mined = (effectiveTotal / difficulty) * 0.00000004086;
                 state.btc += mined;
                 state.totalMined += mined;
             }
@@ -2502,8 +2502,8 @@
             const production = getTotalProduction();
             const totalBattery = getTotalBattery();
             const batteryPct = totalBattery > 0 ? Math.round(state.battery / totalBattery * 100) : 0;
-            const btcPerHour = totalHash * 0.000000000681 * 60 * 3600;
-            const dailyBtc = totalHash * 0.0000000588;
+            const btcPerHour = totalHash * 0.00000004086 * 3600;
+            const dailyBtc = totalHash * 0.000003528;
             const dailyRevenue = dailyBtc * getAverageRate();
             const dailyPowerCost = (getTotalPower() * 24) / 1000 * 0.30;
             const dailyNet = dailyRevenue - dailyPowerCost;
