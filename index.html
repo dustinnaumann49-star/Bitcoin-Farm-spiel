@@ -603,187 +603,164 @@
         .dash-card .dc-val.red { color:#ff6b6b; }
         .dash-card .dc-val.blue { color:#4fc3f7; }
 
+        /* ===== MOBIL-HEADER ===== */
+        .header { display:flex; flex-direction:column; gap:4px; padding:8px 12px; }
+        .header-top {
+            display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;
+        }
+        .h-title { font-size: 15px; font-weight: 700; color: #f7931a; white-space: nowrap; flex-shrink: 0; }
+        .h-btc { font-size: 15px; font-weight: 700; color: #ffd54f; margin-left: auto; }
+        .h-eur { font-size: 15px; font-weight: 700; color: #81c784; }
+        .header-bottom {
+            display: flex; gap: 10px; flex-wrap: nowrap;
+            overflow-x: auto; scrollbar-width: none; font-size: 11px; color: #8899b3;
+            -webkit-overflow-scrolling: touch;
+        }
+        .header-bottom::-webkit-scrollbar { display: none; }
+        .header-bottom span { white-space: nowrap; flex-shrink: 0; }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0a0e14; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #2a3648; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #3a4a6a; }
 
-        /* ===== MOBILE BOTTOM NAV (nur Mobil) ===== */
-        .mobile-bottom-nav {
-            display: none;
-        }
+        /* ============================================================
+           MOBILE-FIRST: Primäres Layout für Android
+           Desktop (>900px) bekommt nur minimale Anpassungen
+        ============================================================ */
 
-        /* ===== MOBILE: <= 600px ===== */
-        @media (max-width: 600px) {
-            body {
-                padding: 0;
-                align-items: stretch;
-            }
-            body {
-                overflow: auto;
-            }
-            .container {
-                border-radius: 0;
-                padding: 70px 10px 20px 10px;
-                box-shadow: none;
-                min-height: 100vh;
-            }
-            /* Header kompakt */
-            .header {
-                padding: 10px 12px;
-                margin-bottom: 12px;
-                border-radius: 10px;
-                gap: 8px;
-            }
-            .header h1 { font-size: 17px; }
-            .realistic-badge { display: none; }
-            /* Stats: 2×3 Grid statt Flex-Reihe */
-            .stats {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 4px 12px;
-                width: 100%;
-            }
-            .stats span { font-size: 12px; }
-            /* Desktop-Tabs ausblenden, Bottom-Nav einblenden */
+        /* Bottom-Nav: standardmäßig versteckt, auf Mobil sichtbar */
+        .mobile-bottom-nav { display: none; }
+
+        /* ===== BASIS MOBIL (alles bis 900px = Hauptlayout) ===== */
+        @media (max-width: 900px) {
+            /* Body */
+            body { padding: 0; align-items: stretch; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+
+            /* Container: Platz für fixe Top-Nav */
+            .container { border-radius: 0; padding: 68px 10px 16px; box-shadow: none; min-height: 100svh; }
+
+            /* Header: kompakt, wichtigste Infos bleiben */
+            .header { padding: 8px 12px; margin-bottom: 10px; border-radius: 10px; gap: 6px; flex-wrap: wrap; }
+            .header h1 { font-size: 16px; }
+            .realistic-badge { font-size: 10px; padding: 1px 5px; }
+
+            /* Stats: 2-Spalten-Grid */
+            .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; width: 100%; }
+            .stats span { font-size: 11px; }
+
+            /* Desktop Tabs raus, Mobile-Nav rein */
             .tabs { display: none; }
             .mobile-bottom-nav {
                 display: flex;
                 position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                background: #141c26;
-                border-bottom: 1px solid #2a3648;
+                top: 0; left: 0; right: 0;
+                background: #0f1620;
+                border-bottom: 1px solid #1e2d42;
                 z-index: 1000;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+                box-shadow: 0 3px 16px rgba(0,0,0,0.6);
             }
             .mobile-bottom-nav .mob-tab {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 8px 4px;
-                background: none;
-                border: none;
-                color: #8899b3;
-                font-size: 10px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: 0.2s;
-                gap: 3px;
+                flex: 1; display: flex; flex-direction: column;
+                align-items: center; justify-content: center;
+                padding: 7px 2px; background: none; border: none;
+                color: #5a7a9a; font-size: 9px; font-weight: 600;
+                cursor: pointer; transition: color .15s, transform .15s; gap: 2px;
+                -webkit-tap-highlight-color: transparent;
             }
-            .mobile-bottom-nav .mob-tab .mob-icon { font-size: 20px; }
+            .mobile-bottom-nav .mob-tab .mob-icon { font-size: 19px; transition: transform .15s; }
             .mobile-bottom-nav .mob-tab.active { color: #f7931a; }
-            .mobile-bottom-nav .mob-tab.active .mob-icon { transform: scale(1.15); }
-            /* Game-Clock kompakter */
-            .game-clock { gap: 6px; }
-            .game-clock .date-box,
-            .game-clock .time-box { font-size: 11px; padding: 3px 8px; }
+            .mobile-bottom-nav .mob-tab.active .mob-icon { transform: scale(1.2); }
+
+            /* Uhrzeit / Datum leiste */
+            .game-clock { gap: 6px; flex-wrap: wrap; }
+            .game-clock .date-box, .game-clock .time-box { font-size: 11px; padding: 3px 8px; }
+            .speed-label { font-size: 10px; margin-left: 4px; }
             .offline-badge { display: none; }
-            .speed-label { font-size: 11px; margin-left: 4px; }
-            /* Speed-Buttons kleiner und scrollbar */
-            .speed-controls {
-                overflow-x: auto;
-                flex-wrap: nowrap;
-                padding-bottom: 4px;
-                -webkit-overflow-scrolling: touch;
-            }
-            .speed-controls label { font-size: 12px; white-space: nowrap; }
-            .speed-btn { padding: 6px 12px; font-size: 12px; }
-            /* Wetter kompakter */
+
+            /* Dashboard stat cards: 2 Spalten */
+            .dash-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .dash-card { padding: 10px 12px; border-radius: 10px; }
+            .dash-card .dc-label { font-size: 10px; }
+            .dash-card .dc-val { font-size: 18px; }
+
+            /* Wetter */
             .weather-forecast { padding: 10px 12px; gap: 6px; }
             .weather-icon { font-size: 22px; }
             .weather-forecast .weather-detail { font-size: 12px; }
-            /* Costs-Bar scrollbar auf Mobil */
-            .costs {
-                overflow-x: auto;
-                flex-wrap: nowrap;
+
+            /* Kosten-Leiste: horizontal scrollbar */
+            .costs, .profit {
+                overflow-x: auto; flex-wrap: nowrap;
                 -webkit-overflow-scrolling: touch;
-                gap: 12px;
-                padding: 10px 12px;
+                gap: 12px; padding: 8px 12px;
+                scrollbar-width: none;
             }
-            .costs span { white-space: nowrap; }
+            .costs::-webkit-scrollbar, .profit::-webkit-scrollbar { display: none; }
+            .costs span, .profit span { white-space: nowrap; font-size: 12px; }
+
             /* Miner-Grid: 1 Spalte */
-            .miner-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            .miner-card { padding: 14px; }
-            /* Shop-Items: Button separat, volle Breite */
-            .shop-item {
-                flex-direction: column;
-                align-items: flex-start;
-                padding: 10px 12px;
-                gap: 8px;
-            }
-            .shop-item button {
-                width: 100%;
-                padding: 10px;
-                font-size: 14px;
-                border-radius: 10px;
-            }
-            /* Dealer: 1 Spalte */
-            .dealer-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-            .dealer-card .rate { font-size: 26px; }
+            .miner-grid { grid-template-columns: 1fr; gap: 10px; }
+            .miner-card { padding: 12px; }
+            .miner-card h3 { font-size: 15px; }
+
+            /* Shop: Bild + Info untereinander, Button volle Breite */
+            .shop-item { flex-direction: column; align-items: flex-start; padding: 10px 12px; gap: 8px; }
+            .shop-item img { width: 80px !important; height: 80px !important; }
+            .shop-item button { width: 100%; padding: 12px; font-size: 15px; border-radius: 10px; min-height: 48px; }
+            .shop-category { font-size: 14px; padding: 8px 12px; }
+
+            /* Dealer: 1 Spalte, Input grösser */
+            .dealer-grid { grid-template-columns: 1fr; gap: 12px; }
+            .dealer-card .rate { font-size: 28px; }
+            .dealer-card .btc-amount { gap: 8px; }
+            .dealer-card .btc-amount input { font-size: 20px; padding: 10px; width: 100%; border-radius: 10px; }
+            .dealer-card .max-btn { padding: 10px 14px; font-size: 14px; min-height: 48px; }
+            .sell-btn { font-size: 16px; padding: 14px; min-height: 52px; }
+
             /* Finance: 1 Spalte */
-            .finance-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            .finance-summary {
-                gap: 10px;
-            }
+            .finance-grid { grid-template-columns: 1fr; gap: 10px; }
+            .finance-summary { gap: 10px; }
             .finance-summary .item .value { font-size: 15px; }
-            /* Footer: gestapelt */
-            .footer {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 8px;
-            }
-            .reset-btn { width: 100%; padding: 12px; font-size: 14px; }
-            /* Profit-Bar scrollbar */
-            .profit {
-                overflow-x: auto;
-                flex-wrap: nowrap;
-                -webkit-overflow-scrolling: touch;
-                gap: 12px;
-            }
-            .profit span { white-space: nowrap; font-size: 13px; }
-            /* Touch-Targets: Mindest-Höhe 44px für alle Buttons */
-            button { min-height: 44px; }
-            .shop-item button,
-            .dealer-card .sell-btn,
-            .reset-btn,
-            .speed-btn,
-            .tab-btn { min-height: 44px; }
-            /* Dealer BTC-Input größer für Touch */
-            .dealer-card .btc-amount input {
-                width: 70px;
-                font-size: 18px;
-                padding: 8px;
-            }
-            /* Payment-History: nur 2 Spalten sichtbar */
-            .finance-card .history .entry {
-                flex-wrap: wrap;
-                gap: 2px;
+
+            /* Wetterkarte: volle Breite */
+            .weather-map-wrap { max-width: 100%; }
+
+            /* Footer */
+            .footer { flex-direction: column; align-items: stretch; gap: 8px; }
+            .reset-btn { width: 100%; padding: 14px; font-size: 15px; min-height: 52px; }
+            .footer span { text-align: center; font-size: 12px; }
+
+            /* Alle Touch-Targets: mind. 44px */
+            button { min-height: 44px; -webkit-tap-highlight-color: transparent; }
+
+            /* Reparieren/Verkaufen Buttons in Miner-Cards */
+            .repair-miner-btn, .sell-miner-btn { min-height: 48px !important; font-size: 13px !important; }
+
+            /* Tab-Inhalte: kein overflow-x */
+            .tab-content { overflow-x: hidden; }
+
+            /* Scroll-Indikator für horizontale Listen */
+            .costs::after, .profit::after {
+                content: ''; display: block; min-width: 12px; height: 1px;
             }
         }
 
-        /* ===== TABLET: 601px – 900px ===== */
+        /* ===== DESKTOP: > 900px (minimale Anpassungen) ===== */
+        @media (min-width: 901px) {
+            .mobile-bottom-nav { display: none !important; }
+            .tabs { display: flex !important; }
+            body { padding: 20px; }
+            .container { border-radius: 16px; padding: 24px; }
+        }
+
+        /* ===== TABLET: 601–900px (2-Spalten-Korrekturen) ===== */
         @media (min-width: 601px) and (max-width: 900px) {
-            body { padding: 12px; }
-            .container { padding: 18px; border-radius: 14px; }
-            .header h1 { font-size: 20px; }
-            .stats span { font-size: 12px; }
-            .miner-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
-            .dealer-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
-            .finance-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
-            .tab-btn { font-size: 15px; padding: 8px 16px; }
+            .miner-grid { grid-template-columns: repeat(2, 1fr); }
+            .dealer-grid { grid-template-columns: repeat(2, 1fr); }
+            .finance-grid { grid-template-columns: repeat(2, 1fr); }
+            .dash-grid { grid-template-columns: repeat(3, 1fr); }
+            .container { padding: 70px 16px 20px; }
         }
     </style>
 </head>
@@ -792,16 +769,17 @@
     <div class="container" id="app">
         <!-- HEADER -->
         <div class="header">
-            <h1>⛏️ Bitcoin Miner <span class="realistic-badge">🔴 ASIC Edition</span></h1>
-            <div class="stats">
-                <span class="btc">₿ <span id="btcDisplay">0.0000</span></span>
-                <span class="eur">€ <span id="eurDisplay">5000.00</span></span>
-                <span class="power">⚡ <span id="powerDisplay">0</span> W</span>
-                <span class="battery">🔋 <span id="batteryDisplay">0</span> Wh</span>
-                <span class="hash">⚡ <span id="hashDisplay">0</span> TH/s</span>
-                <span class="time">📅 <span id="timeDisplay">--.--.----</span></span>
-                <span class="offline" id="offlineDisplay">🟢 Online</span>
-                <span class="status" id="statusDisplay">✅ Aktiv</span>
+            <div class="header-top">
+                <span class="h-title">⛏️ Bitcoin Miner</span>
+                <span class="h-btc">₿ <span id="btcDisplay">0.0000</span></span>
+                <span class="h-eur">€ <span id="eurDisplay">0.00</span></span>
+            </div>
+            <div class="header-bottom">
+                <span>⚡ <span id="powerDisplay">0</span>W</span>
+                <span>🔋 <span id="batteryDisplay">0</span>Wh</span>
+                <span>📊 <span id="hashDisplay">0</span> TH/s</span>
+                <span>📅 <span id="timeDisplay">--</span></span>
+                <span id="statusDisplay" style="color:#81c784;">🟢</span>
             </div>
         </div>
 
