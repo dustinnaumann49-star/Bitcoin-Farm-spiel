@@ -7,9 +7,11 @@
     <style>
         /* ===== ALLE STYLES ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
-            height: 100%;
+        html {
+            height: auto;
+            min-height: 100%;
             overflow-x: hidden;
+            overflow-y: auto;
         }
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -17,10 +19,12 @@
             color: #e0e6ed;
             padding: 0;
             min-height: 100vh;
+            height: auto;
             display: flex;
             justify-content: center;
             align-items: flex-start;
             -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
         }
         .container {
             max-width: 1400px;
@@ -32,6 +36,8 @@
             margin: 20px auto;
             position: relative;
             z-index: 1;
+            min-height: 100vh;
+            height: auto;
         }
         .header {
             display: flex;
@@ -625,19 +631,31 @@
 
         /* ===== BASIS MOBIL (bis 900px) ===== */
         @media (max-width: 900px) {
-            html, body { overflow-x: hidden; width: 100%; max-width: 100vw; }
-            body { padding: 0; align-items: stretch; }
+            html, body { 
+                overflow-x: hidden; 
+                overflow-y: auto !important; 
+                width: 100%; 
+                max-width: 100vw;
+                height: auto;
+                min-height: 100vh;
+            }
+            body { 
+                padding: 0; 
+                align-items: stretch; 
+                -webkit-overflow-scrolling: touch;
+            }
 
             .container {
                 border-radius: 0;
                 padding: 10px 10px 80px;
                 box-shadow: none;
-                min-height: 100svh;
+                min-height: 100vh;
                 width: 100%;
                 box-sizing: border-box;
                 overflow-x: hidden;
                 margin: 0;
-                padding-top: 65px; /* Platz für fixe Top-Nav */
+                padding-top: 65px;
+                height: auto;
             }
 
             .header { padding: 8px 12px; margin-bottom: 10px; border-radius: 10px; gap: 6px; flex-wrap: wrap; }
@@ -746,6 +764,13 @@
             .finance-grid { grid-template-columns: repeat(2, 1fr); }
             .dash-grid { grid-template-columns: repeat(3, 1fr); }
             .container { padding: 70px 16px 80px; }
+        }
+
+        /* ===== FORCE SCROLLING FIX ===== */
+        html, body, .container, #app {
+            overflow-y: auto !important;
+            height: auto !important;
+            min-height: 100vh !important;
         }
     </style>
 </head>
