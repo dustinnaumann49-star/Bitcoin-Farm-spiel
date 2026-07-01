@@ -794,8 +794,20 @@
 
         <!-- ===== SERVER TAB ===== -->
         <div class="tab-content active" id="tab-server">
-            <!-- DASHBOARD STAT CARDS -->
-            <div class="dash-grid">
+            <!-- Standort-Selektor -->
+            <div id="locationSwitcher" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;"></div>
+
+            <!-- Prestige Button -->
+            <button id="prestigeBtn" onclick="doPrestige()" style="display:none; width:100%; padding:12px; margin-bottom:14px;
+                background:linear-gradient(135deg,#2d1f5e,#1a3a6e); border:1px solid #7c4dff;
+                color:#ce93d8; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer;">
+                ⭐ Prestige
+            </button>
+
+            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+                <h3>Mining Rigs · <span id="minerCount">0</span> aktiv · Slots: <span id="maxMinersDisplay">0/10</span></h3>
+                <span class="power-total">⚡ <span id="solarCount">0</span> Solar · 🔋 <span id="batteryPercent">0</span>%</span>
+            </div>
                 <div class="dash-card"><div class="dc-label">⛏️ Hashrate</div><div class="dc-val orange" id="dashHashrate">0 TH/s</div></div>
                 <div class="dash-card"><div class="dc-label">₿ BTC/Stunde</div><div class="dc-val orange" id="dashBtcHour">0.000000</div></div>
                 <div class="dash-card"><div class="dc-label">🔋 Batterie</div><div class="dc-val blue" id="dashBattery">0%</div></div>
@@ -803,11 +815,6 @@
                 <div class="dash-card"><div class="dc-label">💰 Netto/Tag</div><div class="dc-val green" id="dashNetDay">€0</div></div>
                 <div class="dash-card"><div class="dc-label">📅 Spieltag</div><div class="dc-val" id="dashDay">1</div></div>
             </div>
-            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
-                <h3>Mining Rigs · <span id="minerCount">0</span> aktiv · Max. <span id="maxMinersDisplay">10</span></h3>
-                <span class="power-total">⚡ <span id="solarCount">0</span> Solar · 🔋 <span id="batteryPercent">0</span>%</span>
-            </div>
-
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
                 <div class="game-clock">
                     <div class="date-box">📅 <strong id="gameDateDisplay">01.01.2026</strong></div>
@@ -1212,13 +1219,112 @@
                 marketPhase: 'sideways',
                 marketPhaseDaysLeft: 7,
                 marketVolatility: 0.03,
-                powerSource: 'solar'
+                powerSource: 'solar',
+                prestigeLevel: 0,
+                prestigeBonus: 0,
+                totalPrestigeBtc: 0,
+                activeLocation: 0,
+                locations: [
+                    {
+                        id: 0, name: 'Berlin', emoji: '🏙️', unlocked: true,
+                        miners: [2], solarSystems: [2], battery: 10000,
+                        maxMiners: 10, coolingLevel: -1, gridEnergyUsed: 0,
+                        minerTemp: [], minerWear: [], lastPaymentDay: 0
+                    }
+                ]
             };
         }
 
         let state = getInitialState();
 
-        const SAVE_KEY = 'btc_miner_final_v4';
+        const SAVE_KEY = 'btc_miner_final_v5';
+
+        // ============================================================
+        //  STANDORTE & PRESTIGE
+        // ============================================================
+        const LOCATIONS = [
+            { id:0, name:'Berlin',    emoji:'🏙️', unlockCost:0,       rentBase:1500, desc:'Startstandort' },
+            { id:1, name:'München',   emoji:'🍺', unlockCost:500000,  rentBase:2200, desc:'Höhere Miete, bessere Infrastruktur' },
+            { id:2, name:'Hamburg',   emoji:'⚓', unlockCost:1500000, rentBase:2800, desc:'Hafenstadt, günstigere Energie' },
+            { id:3, name:'Frankfurt', emoji:'🏦', unlockCost:4000000, rentBase:3500, desc:'Finanzzentrum, maximale Hashrate +5%' },
+        ];
+
+        // Prestige-Anforderung: 10 BTC für Level 1, 50 BTC für Level 2, etc.
+        const PRESTIGE_REQUIREMENTS = [10, 50, 150, 400, 1000];
+        const PRESTIGE_BONUSES = [0.10, 0.25, 0.45, 0.70, 1.00]; // +10% bis +100% Mining
+
+        function getActiveLoc() {
+            return state.locations[state.activeLocation] || state.locations[0];
+        }
+
+        function getTotalHash() {
+            let total = 0;
+            const loc = getActiveLoc();
+            for (const idx of loc.miners) total += ASIC_MINERS[idx].hash;
+            // Frankfurt-Bonus +5%
+            if (state.activeLocation === 3) total *= 1.05;
+            // Prestige-Bonus
+            total *= (1 + (state.prestigeBonus || 0));
+            return parseFloat(total.toFixed(2));
+        }
+
+        function getTotalPower() {
+            let total = 0;
+            const loc = getActiveLoc();
+            for (const idx of loc.miners) total += ASIC_MINERS[idx].power;
+            if (loc.coolingLevel >= 0) total += 200; // Kühlsystem-Verbrauch
+            return total;
+        }
+
+        function getTotalProduction() {
+            let peak = 0;
+            const loc = getActiveLoc();
+            for (const idx of loc.solarSystems) peak += SOLAR_SYSTEMS[idx].power;
+            const weather = getWeather();
+            return Math.round(peak * weather.production);
+        }
+
+        function getTotalPeakProduction() {
+            let total = 0;
+            const loc = getActiveLoc();
+            for (const idx of loc.solarSystems) total += SOLAR_SYSTEMS[idx].power;
+            return total;
+        }
+
+        function getTotalBattery() {
+            let total = 0;
+            const loc = getActiveLoc();
+            for (const idx of loc.solarSystems) total += SOLAR_SYSTEMS[idx].battery;
+            return total;
+        }
+
+        function getMinerCount() { return getActiveLoc().miners.length; }
+
+        function getRentCost() {
+            const loc = LOCATIONS[state.activeLocation] || LOCATIONS[0];
+            let total = 0;
+            for (const l of state.locations) {
+                if (l.unlocked) total += l.miners.length * loc.rentBase + 300;
+            }
+            return total;
+        }
+
+        function getMinerEffectiveHash(slotIdx) {
+            const loc = getActiveLoc();
+            const idx = loc.miners[slotIdx];
+            const miner = ASIC_MINERS[idx];
+            const temp = loc.minerTemp[slotIdx] || 50;
+            const wear = loc.minerWear[slotIdx] || 0;
+            let factor = 1.0;
+            if (temp > 85) factor -= (temp - 85) / 100;
+            factor -= wear / 1000;
+            return miner.hash * Math.max(0.5, factor);
+        }
+
+        function canPrestige() {
+            const req = PRESTIGE_REQUIREMENTS[state.prestigeLevel];
+            return req !== undefined && state.totalMined >= req;
+        }
 
         // ============================================================
         //  SPEICHERN / LADEN
@@ -1233,8 +1339,22 @@
                 if (!raw) return false;
                 const data = JSON.parse(raw);
                 Object.assign(state, data);
-                if (!Array.isArray(state.miners)) state.miners = [];
-                if (!Array.isArray(state.solarSystems)) state.solarSystems = [];
+                if (!Array.isArray(state.locations)) state.locations = getInitialState().locations;
+                if (state.activeLocation === undefined) state.activeLocation = 0;
+                if (state.prestigeLevel === undefined) state.prestigeLevel = 0;
+                if (state.prestigeBonus === undefined) state.prestigeBonus = 0;
+                // Migrate old save: convert flat miners/solarSystems to locations array
+                if (state.miners && !state.locations[0].miners.length) {
+                    state.locations[0].miners = state.miners || [2];
+                    state.locations[0].solarSystems = state.solarSystems || [2];
+                    state.locations[0].battery = state.battery || 10000;
+                    state.locations[0].maxMiners = state.maxMiners || 10;
+                    state.locations[0].coolingLevel = state.coolingLevel || -1;
+                    state.locations[0].gridEnergyUsed = state.gridEnergyUsed || 0;
+                    state.locations[0].minerTemp = state.minerTemp || [];
+                    state.locations[0].minerWear = state.minerWear || [];
+                    state.locations[0].lastPaymentDay = state.lastPaymentDay || 0;
+                }
                 if (!Array.isArray(state.weatherHistory)) state.weatherHistory = [];
                 if (!Array.isArray(state.paymentHistory)) state.paymentHistory = [];
                 if (!Array.isArray(state.rateHistory)) state.rateHistory = [];
@@ -1288,14 +1408,14 @@
             const totalBatteryCap = getTotalBattery();
             if (netPower < 0) {
                 const drain = Math.abs(netPower) / 3600 * gameSeconds;
-                state.battery = Math.max(0, state.battery - drain);
+                getActiveLoc().battery = Math.max(0, (getActiveLoc().battery || 0) - drain);
             } else {
                 const charge = netPower / 3600 * gameSeconds;
-                state.battery = Math.min(totalBatteryCap, state.battery + charge);
+                getActiveLoc().battery = Math.min(totalBatteryCap, (getActiveLoc().battery || 0) + charge);
             }
 
             // Mining möglich wenn Solar im Durchschnitt genug liefert ODER Batterie noch geladen
-            const hasPower = (avgProduction > 0 || state.battery > 0) && state.miners.length > 0;
+            const hasPower = (avgProduction > 0 || (getActiveLoc().battery || 0) > 0) && getActiveLoc().miners.length > 0;
 
             // Spielzeit vorwärts spulen
             state.gameTime += Math.floor(gameSeconds);
@@ -1317,7 +1437,7 @@
             const infoEl = document.getElementById('offlineInfo');
             const textEl = document.getElementById('offlineMinedText');
 
-            if (hash > 0 && hasPower && state.miners.length > 0) {
+            if (hash > 0 && hasPower && getActiveLoc().miners.length > 0) {
                 const minedPerGameSecond = (hash / difficulty) * 0.00000004086;
                 const mined = minedPerGameSecond * gameSeconds;
 
@@ -1406,29 +1526,26 @@
             return total;
         }
 
-        function getMinerCount() { return state.miners.length; }
-        function getSolarCount() { return state.solarSystems.length; }
+        function getSolarCount() { return getActiveLoc().solarSystems.length; }
         function getWeather() { return WEATHER_TYPES[state.weatherIndex]; }
 
-        function getRentCost() { return getMinerCount() * 1500 + 300; }
-
         function getMaintenanceCost() { return 0; }
-
         function getInsuranceCost() { return 0; }
 
-        // Akkumulierter Netzstromverbrauch (Wh) seit letzter Monatsabrechnung
-        // Wird jeden Tick live nachgeführt
         function getPowerCost() {
-            // Nur für Anzeige: basierend auf akkumuliertem Netzstromverbrauch
-            return (state.gridEnergyUsed || 0) / 1000 * 0.30;
+            // Netzstrom aller Standorte summieren
+            let total = 0;
+            for (const loc of state.locations) {
+                total += (loc.gridEnergyUsed || 0);
+            }
+            return total / 1000 * 0.30;
         }
 
         function getTotalMonthlyCosts() {
-            return getRentCost() + getMaintenanceCost() + getInsuranceCost() + getPowerCost();
+            return getRentCost() + getPowerCost();
         }
 
         function getTaxOnProfit(profit) { return profit * 0.25; }
-
         function getDifficultyMultiplier() { return state.difficulty; }
 
         function getAverageRate() {
@@ -1632,7 +1749,8 @@
             const gameDate = getGameDateTime(state.gameTime);
             const dayOfMonth = parseInt(gameDate.date.split('.')[0]);
 
-            if (dayOfMonth === 1 && currentDay > state.lastPaymentDay) {
+            const loc = getActiveLoc();
+            if (dayOfMonth === 1 && currentDay > (loc.lastPaymentDay || 0)) {
                 const rent = getRentCost();
                 const maintenance = getMaintenanceCost();
                 const insurance = getInsuranceCost();
@@ -1642,8 +1760,8 @@
                 if (state.eur >= total) {
                     state.eur -= total;
                 } else {
-                    if (state.miners.length > 0) {
-                        const idx = state.miners.pop();
+                    if (loc.miners.length > 0) {
+                        const idx = loc.miners.pop();
                         state.eur += ASIC_MINERS[idx].price * 0.7;
                     }
                     state.eur = Math.max(0, state.eur - total);
@@ -1658,8 +1776,8 @@
                     total: total
                 });
 
-                state.lastPaymentDay = currentDay;
-                state.gridEnergyUsed = 0; // Zähler zurücksetzen für nächsten Monat
+                loc.lastPaymentDay = currentDay;
+                loc.gridEnergyUsed = 0; // Zähler zurücksetzen für nächsten Monat
                 if (state.paymentHistory.length > 24) state.paymentHistory.shift();
                 render();
             }
@@ -1688,7 +1806,8 @@
             const totalHash = getTotalHash() / getDifficultyMultiplier();
             const solarCount = getSolarCount();
             const totalBattery = getTotalBattery();
-            const batteryPercent = totalBattery > 0 ? Math.round((state.battery / totalBattery) * 100) : 0;
+            const locBat = getActiveLoc().battery || 0;
+            const batteryPercent = totalBattery > 0 ? Math.round((locBat / totalBattery) * 100) : 0;
             const minerCount = getMinerCount();
             const weather = getWeather();
             const gameTime = getGameDateTime(state.gameTime);
@@ -1696,7 +1815,7 @@
             document.getElementById('btcDisplay').textContent = state.btc.toFixed(4);
             document.getElementById('eurDisplay').textContent = state.eur.toFixed(2);
             document.getElementById('powerDisplay').textContent = `${production}W / ${consumption}W`;
-            document.getElementById('batteryDisplay').textContent = Math.round(state.battery);
+            document.getElementById('batteryDisplay').textContent = Math.round(getActiveLoc().battery || 0);
             document.getElementById('hashDisplay').textContent = Math.round(totalHash);
             document.getElementById('solarCount').textContent = solarCount;
             document.getElementById('batteryPercent').textContent = batteryPercent;
@@ -1723,7 +1842,8 @@
 
             document.getElementById('solarProduction').textContent = `${production} W`;
             document.getElementById('powerConsumption').textContent = `${consumption} W`;
-            document.getElementById('batteryStatus').textContent = `${Math.round(state.battery)} Wh / ${totalBattery} Wh`;
+            const locBattery = getActiveLoc().battery || 0;
+            document.getElementById('batteryStatus').textContent = `${Math.round(locBattery)} Wh / ${totalBattery} Wh`;
             document.getElementById('batteryFill').style.width = `${batteryPercent}%`;
 
             const powerSource = state.powerSource || 'solar';
@@ -1752,10 +1872,10 @@
             } else if (production === 0) {
                 statusEl.textContent = `⛔ Kein Strom (${weather.label})`;
                 statusEl.style.color = '#ff6b6b';
-            } else if (state.battery === 0 && consumption > production) {
+            } else if ((getActiveLoc().battery || 0) === 0 && consumption > production) {
                 statusEl.textContent = `⛔ Batterie leer (${weather.label})`;
                 statusEl.style.color = '#ff6b6b';
-            } else if (totalHash > 0 && (production >= consumption || state.battery > 0)) {
+            } else if (totalHash > 0 && (production >= consumption || (getActiveLoc().battery || 0) > 0)) {
                 statusEl.textContent = `✅ Mining aktiv (${weather.label})`;
                 statusEl.style.color = '#81c784';
             } else if (minerCount === 0) {
@@ -1790,12 +1910,12 @@
             const hint = document.getElementById('powerHint');
             if (production === 0) {
                 hint.innerHTML = `⚠️ <span class="warning">Keine Solarproduktion! (${weather.label}) Batterie wird entladen.</span>`;
-            } else if (state.battery === 0 && consumption > production) {
+            } else if ((getActiveLoc().battery || 0) === 0 && consumption > production) {
                 hint.innerHTML =
                     `⚠️ <span class="warning">Batterie leer! ${consumption}W benötigt, nur ${production}W produziert. (${weather.label})</span>`;
             } else {
                 hint.innerHTML =
-                    `☀️ Solarproduktion: ${production}W · Verbrauch: ${consumption}W · Batterie: ${Math.round(state.battery)}Wh / ${totalBattery}Wh · Wetter: ${weather.icon} ${weather.label}`;
+                    `☀️ Solarproduktion: ${production}W · Verbrauch: ${consumption}W · Batterie: ${Math.round(getActiveLoc().battery || 0)}Wh / ${totalBattery}Wh · Wetter: ${weather.icon} ${weather.label}`;
             }
         }
 
@@ -1803,25 +1923,54 @@
         //  RENDER MINERS
         // ============================================================
         function renderMiners() {
+            const loc = getActiveLoc();
             const grid = document.getElementById('minerGrid');
             grid.innerHTML = '';
             const production = getTotalProduction();
 
-            // Max-Rigs Badge aktualisieren
-            const maxEl = document.getElementById('maxMinersDisplay');
-            if (maxEl) maxEl.textContent = state.maxMiners;
+            // Standort-Selektor aktualisieren
+            const locSwitcher = document.getElementById('locationSwitcher');
+            if (locSwitcher) {
+                locSwitcher.innerHTML = state.locations.map((l, i) => `
+                    <button onclick="switchLocation(${i})" style="
+                        padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;
+                        border:1px solid ${i === state.activeLocation ? '#f7931a' : '#2a3648'};
+                        background:${i === state.activeLocation ? 'rgba(247,147,26,0.15)' : '#1a2432'};
+                        color:${i === state.activeLocation ? '#f7931a' : '#8899b3'};">
+                        ${l.emoji} ${l.name}
+                    </button>
+                `).join('');
+            }
 
-            for (let i = 0; i < state.maxMiners; i++) {
-                const hasMiner = i < state.miners.length;
+            // Prestige-Button
+            const prestigeBtn = document.getElementById('prestigeBtn');
+            if (prestigeBtn) {
+                const lvl = state.prestigeLevel || 0;
+                const req = PRESTIGE_REQUIREMENTS[lvl];
+                const canP = canPrestige();
+                prestigeBtn.style.display = req !== undefined ? 'block' : 'none';
+                prestigeBtn.innerHTML = canP
+                    ? `⭐ Prestige Level ${lvl + 1} (${req} BTC gemined ✅)`
+                    : `⭐ Prestige Level ${lvl + 1} (${(state.totalMined || 0).toFixed(4)} / ${req} BTC)`;
+                prestigeBtn.style.opacity = canP ? '1' : '0.5';
+                prestigeBtn.disabled = !canP;
+            }
+
+            // Max-Rigs Badge
+            const maxEl = document.getElementById('maxMinersDisplay');
+            if (maxEl) maxEl.textContent = `${loc.miners.length} / ${loc.maxMiners}`;
+
+            for (let i = 0; i < loc.maxMiners; i++) {
+                const hasMiner = i < loc.miners.length;
                 const card = document.createElement('div');
 
                 if (hasMiner) {
-                    const idx = state.miners[i];
+                    const idx = loc.miners[i];
                     const miner = ASIC_MINERS[idx];
                     const src = state.powerSource;
                     const hasPower = src === 'solar' || src === 'battery' || src === 'mixed' || src === 'grid';
-                    const temp = Math.round(state.minerTemp[i] || 50);
-                    const wear = Math.round(state.minerWear[i] || 0);
+                    const temp = Math.round(loc.minerTemp[i] || 50);
+                    const wear = Math.round(loc.minerWear[i] || 0);
                     const effectiveHash = getMinerEffectiveHash(i).toFixed(1);
                     let statusClass = hasPower ? 'online' : 'offline';
                     let statusText = src === 'solar' ? '☀️ Solar'
@@ -1910,7 +2059,7 @@
                 const div = document.createElement('div');
                 div.className = 'shop-item';
                 div.style.borderLeftColor = '#ce93d8';
-                const canBuy = state.eur >= miner.price && state.miners.length < state.maxMiners;
+                const canBuy = state.eur >= miner.price && getActiveLoc().miners.length < getActiveLoc().maxMiners;
                 div.innerHTML = `
                     ${miner.image ? `<img src="${miner.image}" alt="${miner.name}" style="width:70px; height:70px; object-fit:contain; border-radius:8px; background:#0a0e14; padding:4px; flex-shrink:0;">` : ''}
                     <div class="desc">
@@ -1954,7 +2103,7 @@
             const upgradeDiv = document.createElement('div');
             upgradeDiv.className = 'shop-item';
             upgradeDiv.style.borderLeftColor = '#4fc3f7';
-            const upgradeDisabled = state.eur < SERVER_UPGRADE.price || state.maxMiners >= 10;
+            const upgradeDisabled = state.eur < SERVER_UPGRADE.price || getActiveLoc().maxMiners >= 10;
             upgradeDiv.innerHTML = `
                 <div class="desc">
                     <strong>🏗️ ${SERVER_UPGRADE.name}</strong>
@@ -1966,6 +2115,7 @@
             container.appendChild(upgradeDiv);
 
             // Kühlsysteme
+            const loc = getActiveLoc();
             const coolingCategory = document.createElement('div');
             coolingCategory.className = 'shop-category';
             coolingCategory.innerHTML = '<span class="cat-icon">❄️</span> Kühlsysteme';
@@ -1973,8 +2123,8 @@
 
             const installedEl = document.createElement('div');
             installedEl.style.cssText = 'font-size:13px; color:#81c784; padding:6px 12px 10px; margin-bottom:4px;';
-            installedEl.textContent = state.coolingLevel >= 0
-                ? `✅ Installiert: ${COOLING_SYSTEMS[state.coolingLevel].name} (−${Math.round(COOLING_SYSTEMS[state.coolingLevel].coolingFactor * 100)}% Wärme)`
+            installedEl.textContent = loc.coolingLevel >= 0
+                ? `✅ Installiert: ${COOLING_SYSTEMS[loc.coolingLevel].name} (−${Math.round(COOLING_SYSTEMS[loc.coolingLevel].coolingFactor * 100)}% Wärme)`
                 : '❌ Kein Kühlsystem installiert – Miner überhitzen schneller';
             container.appendChild(installedEl);
 
@@ -1983,7 +2133,7 @@
                 const div = document.createElement('div');
                 div.className = 'shop-item';
                 div.style.borderLeftColor = '#80deea';
-                const alreadyOwned = state.coolingLevel >= i;
+                const alreadyOwned = loc.coolingLevel >= i;
                 const canAfford = state.eur >= sys.price;
                 div.innerHTML = `
                     ${sys.image ? `<img src="${sys.image}" alt="${sys.name}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; flex-shrink:0;">` : ''}
@@ -1999,6 +2149,33 @@
                 container.appendChild(div);
             }
 
+            // Neue Standorte freischalten
+            const locCategory = document.createElement('div');
+            locCategory.className = 'shop-category';
+            locCategory.innerHTML = '<span class="cat-icon">🏙️</span> Neue Standorte freischalten';
+            container.appendChild(locCategory);
+
+            for (let i = 1; i < LOCATIONS.length; i++) {
+                const locDef = LOCATIONS[i];
+                const owned = state.locations.find(l => l.id === i);
+                const canAfford = state.eur >= locDef.unlockCost;
+                const div = document.createElement('div');
+                div.className = 'shop-item';
+                div.style.borderLeftColor = '#ce93d8';
+                div.innerHTML = `
+                    <div class="desc" style="font-size:22px;">${locDef.emoji}</div>
+                    <div class="desc">
+                        <strong>${locDef.name}</strong>
+                        <small>${locDef.desc}</small>
+                    </div>
+                    <span>€${locDef.unlockCost.toLocaleString()}</span>
+                    <button ${owned ? 'disabled' : !canAfford ? 'disabled' : ''} data-buy="location" data-idx="${i}">
+                        ${owned ? '✅ Freigeschaltet' : 'Freischalten'}
+                    </button>
+                `;
+                container.appendChild(div);
+            }
+
             container.querySelectorAll('button[data-buy]').forEach(btn => {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
@@ -2008,6 +2185,7 @@
                     else if (type === 'solar') buySolarSystem(idx);
                     else if (type === 'upgrade') buyUpgrade();
                     else if (type === 'cooling') buyCooling(idx);
+                    else if (type === 'location') unlockLocation(idx);
                 });
             });
         }
@@ -2202,7 +2380,8 @@
 
 
             document.getElementById('financePowerAmount').textContent = `€${getPowerCost().toFixed(2)}`;
-            document.getElementById('financePowerUsage').textContent = `${Math.round(state.gridEnergyUsed || 0)} Wh`;
+            const totalGridUsed = state.locations.reduce((s, l) => s + (l.gridEnergyUsed || 0), 0);
+            document.getElementById('financePowerUsage').textContent = `${Math.round(totalGridUsed)} Wh`;
             const prod = getTotalProduction();
             const cons = getTotalPower();
             const coverage = cons > 0 ? Math.min(100, Math.round(prod / cons * 100)) : 100;
@@ -2256,48 +2435,102 @@
         //  SPIEL-LOGIK
         // ============================================================
         function buyMiner(idx) {
+            const loc = getActiveLoc();
             const miner = ASIC_MINERS[idx];
-            if (state.eur < miner.price || state.miners.length >= state.maxMiners) return;
-            state.miners.push(idx);
+            if (state.eur < miner.price || loc.miners.length >= loc.maxMiners) return;
+            loc.miners.push(idx);
+            loc.minerTemp.push(50);
+            loc.minerWear.push(0);
             state.eur -= miner.price;
             render();
         }
 
         function sellMiner(slotIdx) {
-            if (slotIdx < 0 || slotIdx >= state.miners.length) return;
-            const minerIdx = state.miners[slotIdx];
-            const miner = ASIC_MINERS[minerIdx];
+            const loc = getActiveLoc();
+            if (slotIdx < 0 || slotIdx >= loc.miners.length) return;
+            const miner = ASIC_MINERS[loc.miners[slotIdx]];
             const refund = Math.round(miner.price * 0.5);
-            if (!confirm(`🔄 Rig verkaufen?\n\n"${miner.name}" wird verkauft.\nRückerstattung: €${refund.toFixed(2)} (50% des Kaufpreises)`)) return;
-            state.miners.splice(slotIdx, 1);
+            if (!confirm(`🔄 Rig verkaufen?\n\n"${miner.name}" wird verkauft.\nRückerstattung: €${refund.toFixed(2)} (50%)`)) return;
+            loc.miners.splice(slotIdx, 1);
+            loc.minerTemp.splice(slotIdx, 1);
+            loc.minerWear.splice(slotIdx, 1);
             state.eur += refund;
-            render();
-            saveGame();
+            render(); saveGame();
         }
 
         function buySolarSystem(idx) {
+            const loc = getActiveLoc();
             const system = SOLAR_SYSTEMS[idx];
             if (state.eur < system.price) return;
-            state.solarSystems.push(idx);
-            state.battery += system.battery;
+            loc.solarSystems.push(idx);
+            loc.battery = (loc.battery || 0) + system.battery;
             state.eur -= system.price;
             render();
         }
 
         function buyUpgrade() {
-            if (state.eur < SERVER_UPGRADE.price || state.maxMiners >= 10) return;
-            state.maxMiners += 1;
+            const loc = getActiveLoc();
+            if (state.eur < SERVER_UPGRADE.price || loc.maxMiners >= 10) return;
+            loc.maxMiners += 1;
             state.eur -= SERVER_UPGRADE.price;
             render();
         }
 
         function buyCooling(idx) {
+            const loc = getActiveLoc();
             const system = COOLING_SYSTEMS[idx];
             if (state.eur < system.price) return;
-            if (state.coolingLevel >= idx) { alert('Dieses Kühlsystem oder ein besseres ist bereits installiert.'); return; }
+            if (loc.coolingLevel >= idx) { alert('Dieses Kühlsystem oder ein besseres ist bereits installiert.'); return; }
             state.eur -= system.price;
-            state.coolingLevel = idx;
+            loc.coolingLevel = idx;
             render();
+        }
+
+        function unlockLocation(id) {
+            const locDef = LOCATIONS[id];
+            if (!locDef || state.eur < locDef.unlockCost) return;
+            if (state.locations.find(l => l.id === id)) { alert('Standort bereits freigeschaltet.'); return; }
+            state.eur -= locDef.unlockCost;
+            state.locations.push({
+                id, name: locDef.name, emoji: locDef.emoji, unlocked: true,
+                miners: [], solarSystems: [2], battery: 10000,
+                maxMiners: 10, coolingLevel: -1, gridEnergyUsed: 0,
+                minerTemp: [], minerWear: [], lastPaymentDay: Math.floor(state.gameTime / 86400)
+            });
+            state.activeLocation = state.locations.length - 1;
+            render(); saveGame();
+        }
+
+        function switchLocation(idx) {
+            if (idx < 0 || idx >= state.locations.length) return;
+            state.activeLocation = idx;
+            state.powerSource = 'solar';
+            render();
+        }
+
+        function doPrestige() {
+            if (!canPrestige()) return;
+            const req = PRESTIGE_REQUIREMENTS[state.prestigeLevel];
+            const bonus = PRESTIGE_BONUSES[state.prestigeLevel];
+            if (!confirm(`⭐ Prestige Level ${state.prestigeLevel + 1}?\n\nVoraussetzung: ${req} BTC gemined ✅\nBonus: +${Math.round(bonus * 100)}% Mining dauerhaft\n\nAlle Miner, Solar, Standorte und dein Geld werden zurückgesetzt.\nDein BTC-Bestand und der Prestige-Bonus bleiben erhalten.`)) return;
+
+            const fresh = getInitialState();
+            const prevBtc = state.btc;
+            const prevTotal = state.totalMined;
+
+            for (const key in state) delete state[key];
+            Object.assign(state, fresh);
+
+            // Prestige-Werte beibehalten
+            state.prestigeLevel = (state.prestigeLevel || 0) + 1;
+            state.prestigeBonus = bonus;
+            state.totalPrestigeBtc = (state.totalPrestigeBtc || 0) + prevTotal;
+            state.btc = prevBtc; // BTC bleibt erhalten
+
+            tickCounter = 0; dealerBuilt = false;
+            generateRates(); changeWeather();
+            render(); saveGame();
+            alert(`⭐ Prestige Level ${state.prestigeLevel} erreicht!\n+${Math.round(bonus * 100)}% Mining-Bonus dauerhaft aktiv!`);
         }
 
         // ============================================================
@@ -2379,6 +2612,7 @@
         //  STROM & BATTERIE
         // ============================================================
         function powerTick() {
+            const loc = getActiveLoc();
             const production = getTotalProduction();
             const consumption = getTotalPower();
             const totalBattery = getTotalBattery();
@@ -2388,49 +2622,37 @@
             let hasPower = false;
             let gridNeeded = 0;
 
-            if (state.miners.length === 0) {
-                // Keine Miner → nur Batterie laden wenn Solar da
-                if (production > 0) {
-                    state.battery = Math.min(totalBattery, state.battery + productionPerSecond);
-                }
+            if (loc.miners.length === 0) {
+                if (production > 0) loc.battery = Math.min(totalBattery, (loc.battery || 0) + productionPerSecond);
                 hasPower = false;
             } else if (production >= consumption) {
-                // Solar deckt alles → Überschuss in Batterie
-                state.battery = Math.min(totalBattery, state.battery + productionPerSecond - consumptionPerSecond);
+                loc.battery = Math.min(totalBattery, (loc.battery || 0) + productionPerSecond - consumptionPerSecond);
                 hasPower = true;
             } else {
-                // Solar reicht nicht → erst Solar nutzen, dann Batterie, dann Netz
                 const deficit = consumptionPerSecond - productionPerSecond;
-                if (state.battery >= deficit) {
-                    // Solar + Batterie deckt alles
-                    state.battery = Math.max(0, state.battery - deficit);
+                if ((loc.battery || 0) >= deficit) {
+                    loc.battery = Math.max(0, (loc.battery || 0) - deficit);
                     hasPower = true;
-                } else if (state.battery > 0) {
-                    // Solar + Batterie teilweise → Rest vom Netz
-                    const fromGrid = deficit - state.battery;
-                    state.battery = 0;
+                } else if ((loc.battery || 0) > 0) {
+                    const fromGrid = deficit - loc.battery;
+                    loc.battery = 0;
                     gridNeeded = fromGrid;
                     hasPower = true;
                 } else {
-                    // Kein Solar, keine Batterie → alles vom Netz → Miner laufen weiter!
                     gridNeeded = consumptionPerSecond;
                     hasPower = true;
                 }
             }
 
-            // Netzstromverbrauch akkumulieren
-            if (gridNeeded > 0) {
-                state.gridEnergyUsed = (state.gridEnergyUsed || 0) + gridNeeded;
-            }
+            if (gridNeeded > 0) loc.gridEnergyUsed = (loc.gridEnergyUsed || 0) + gridNeeded;
 
-            // Stromquelle für Anzeige merken
             state.powerSource = production >= consumption ? 'solar' :
-                                gridNeeded > 0 && state.battery === 0 ? 'grid' :
+                                gridNeeded > 0 && (loc.battery || 0) === 0 ? 'grid' :
                                 gridNeeded > 0 ? 'mixed' : 'battery';
 
             if (hasPower && getTotalHash() > 0) {
                 let effectiveTotal = 0;
-                for (let i = 0; i < state.miners.length; i++) effectiveTotal += getMinerEffectiveHash(i);
+                for (let i = 0; i < loc.miners.length; i++) effectiveTotal += getMinerEffectiveHash(i);
                 const difficulty = getDifficultyMultiplier();
                 const mined = (effectiveTotal / difficulty) * 0.00000004086;
                 state.btc += mined;
@@ -2670,12 +2892,12 @@
         function checkNotifications() {
             // Batterie leer
             const totalBattery = getTotalBattery();
-            const pct = totalBattery > 0 ? state.battery / totalBattery : 1;
+            const pct = totalBattery > 0 ? (getActiveLoc().battery || 0) / totalBattery : 1;
             if (pct < 0.05) sendNotif('⚡ Batterie fast leer!', 'Die Batterie ist unter 5% – Mining könnte ausfallen.', 'battery_low');
 
             // Miner überhitzt
-            for (let i = 0; i < state.miners.length; i++) {
-                const temp = state.minerTemp[i] || 50;
+            for (let i = 0; i < getActiveLoc().miners.length; i++) {
+                const temp = getActiveLoc().minerTemp[i] || 50;
                 if (temp >= 90) sendNotif('🌡️ Miner überhitzt!', `Rig #${i+1} hat ${Math.round(temp)}°C – Leistungsverlust aktiv!`, `overheat_${i}`);
             }
 
@@ -2692,49 +2914,37 @@
         //  TEMPERATUR & VERSCHLEISS
         // ============================================================
         function tickMinerCondition() {
-            const hasPower = getTotalProduction() >= getTotalPower() || state.battery > 0;
+            const loc = getActiveLoc();
+            const hasPower = getTotalProduction() >= getTotalPower() || (loc.battery || 0) > 0;
 
-            for (let i = 0; i < state.miners.length; i++) {
-                // Temperatur init
-                if (state.minerTemp[i] === undefined) state.minerTemp[i] = 50;
-                if (state.minerWear[i] === undefined) state.minerWear[i] = 0;
+            for (let i = 0; i < loc.miners.length; i++) {
+                if (loc.minerTemp[i] === undefined) loc.minerTemp[i] = 50;
+                if (loc.minerWear[i] === undefined) loc.minerWear[i] = 0;
 
                 if (hasPower) {
                     const weather = getWeather();
                     const heatFactor = weather.id === 'sunny' ? 1.15 : 1.0;
-                    // Kühlfaktor aus installiertem Kühlsystem
-                    const cooling = state.coolingLevel >= 0 ? COOLING_SYSTEMS[state.coolingLevel].coolingFactor : 0;
+                    const cooling = loc.coolingLevel >= 0 ? COOLING_SYSTEMS[loc.coolingLevel].coolingFactor : 0;
                     const heatRate = 0.002 * heatFactor * (1 - cooling);
-                    state.minerTemp[i] = Math.min(100, state.minerTemp[i] + heatRate - Math.random() * 0.001);
-                    state.minerWear[i] = Math.min(100, state.minerWear[i] + 0.0001);
+                    loc.minerTemp[i] = Math.min(100, loc.minerTemp[i] + heatRate - Math.random() * 0.001);
+                    loc.minerWear[i] = Math.min(100, loc.minerWear[i] + 0.0001);
                 } else {
-                    // Kühlt ab wenn kein Strom
-                    state.minerTemp[i] = Math.max(25, state.minerTemp[i] - 0.005);
+                    loc.minerTemp[i] = Math.max(25, loc.minerTemp[i] - 0.005);
                 }
             }
         }
 
-        // Gibt effektive Hash-Rate eines Miners zurück (reduziert bei Hitze/Verschleiß)
-        function getMinerEffectiveHash(slotIdx) {
-            const idx = state.miners[slotIdx];
-            const miner = ASIC_MINERS[idx];
-            const temp = state.minerTemp[slotIdx] || 50;
-            const wear = state.minerWear[slotIdx] || 0;
-            let factor = 1.0;
-            if (temp > 85) factor -= (temp - 85) / 100;      // Überhitzung: bis -15%
-            factor -= wear / 1000;                              // Verschleiß: bis -10% bei 100%
-            return miner.hash * Math.max(0.5, factor);
-        }
-
         function repairMiner(slotIdx) {
-            if (slotIdx < 0 || slotIdx >= state.miners.length) return;
-            const miner = ASIC_MINERS[state.miners[slotIdx]];
-            const cost = Math.round(miner.price * 0.05 * (state.minerWear[slotIdx] / 100));
+            const loc = getActiveLoc();
+            if (slotIdx < 0 || slotIdx >= loc.miners.length) return;
+            const miner = ASIC_MINERS[loc.miners[slotIdx]];
+            const wear = loc.minerWear[slotIdx] || 0;
+            const cost = Math.round(miner.price * 0.05 * (wear / 100));
             if (cost === 0) { alert('Dieser Miner ist noch in gutem Zustand.'); return; }
             if (!confirm(`🔧 Miner reparieren?\nKosten: €${cost.toLocaleString()}\nVerschleiß wird auf 0% zurückgesetzt.`)) return;
             if (state.eur < cost) { alert('Nicht genug Geld!'); return; }
             state.eur -= cost;
-            state.minerWear[slotIdx] = 0;
+            loc.minerWear[slotIdx] = 0;
             render();
         }
 
@@ -2745,7 +2955,7 @@
             const totalHash = getTotalHash() / getDifficultyMultiplier();
             const production = getTotalProduction();
             const totalBattery = getTotalBattery();
-            const batteryPct = totalBattery > 0 ? Math.round(state.battery / totalBattery * 100) : 0;
+            const batteryPct = totalBattery > 0 ? Math.round((getActiveLoc().battery || 0) / totalBattery * 100) : 0;
             const btcPerHour = totalHash * 0.00000004086 * 3600;
             const dailyBtc = totalHash * 0.000003528;
             const dailyRevenue = dailyBtc * getAverageRate();
