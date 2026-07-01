@@ -2,23 +2,25 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>Bitcoin Miner - ASIC Edition</title>
     <style>
-        /* ===== ALLE STYLES WIE VORHER ===== */
+        /* ===== ALLE STYLES ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             height: 100%;
+            overflow-x: hidden;
         }
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             background: #0a0e14;
             color: #e0e6ed;
-            padding: 20px;
+            padding: 0;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: flex-start;
+            -webkit-overflow-scrolling: touch;
         }
         .container {
             max-width: 1400px;
@@ -27,6 +29,9 @@
             border-radius: 20px;
             padding: 25px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            margin: 20px auto;
+            position: relative;
+            z-index: 1;
         }
         .header {
             display: flex;
@@ -570,7 +575,6 @@
         #bg-canvas { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; }
         .container { position:relative; z-index:1; }
 
-        /* Mining card glow when active */
         .miner-card.online { animation: miner-glow 2.4s ease-in-out infinite; }
         .miner-card.online .mining-pulse {
             display:inline-block; width:8px; height:8px; border-radius:50%;
@@ -582,17 +586,14 @@
         }
         .miner-card.offline .mining-pulse { display:none; }
 
-        /* Temp bar */
         .temp-bar-wrap { background:#1a2432; border-radius:4px; height:6px; margin:6px 0 2px; overflow:hidden; }
         .temp-bar { height:100%; border-radius:4px; transition:width .5s, background .5s; }
         .wear-bar-wrap { background:#1a2432; border-radius:4px; height:4px; margin:4px 0 2px; overflow:hidden; }
         .wear-bar { height:100%; border-radius:4px; background:#4fc3f7; transition:width .5s; }
 
-        /* Coin pop animation */
         .coin-pop { position:fixed; font-size:28px; pointer-events:none; z-index:9999;
             animation:coin-pop .8s ease-out forwards; }
 
-        /* Dashboard stat cards */
         .dash-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
         .dash-card { background:#141c26; border:1px solid #2a3648; border-radius:12px; padding:12px 14px; }
         .dash-card .dc-label { font-size:11px; color:#8899b3; margin-bottom:4px; }
@@ -603,7 +604,6 @@
         .dash-card .dc-val.red { color:#ff6b6b; }
         .dash-card .dc-val.blue { color:#4fc3f7; }
 
-        /* Header */
         .header { display:flex; flex-direction:column; gap:4px; padding:8px 12px; overflow:hidden; width:100%; box-sizing:border-box; }
         .header-top { display:flex; align-items:center; gap:8px; width:100%; min-width:0; }
         .h-title { font-size:14px; font-weight:700; color:#f7931a; white-space:nowrap; flex-shrink:0; }
@@ -620,32 +620,35 @@
 
         /* ============================================================
            MOBILE-FIRST: Primäres Layout für Android
-           Desktop (>900px) bekommt nur minimale Anpassungen
         ============================================================ */
-
-        /* Bottom-Nav: standardmäßig versteckt, auf Mobil sichtbar */
         .mobile-bottom-nav { display: none; }
 
-        /* ===== BASIS MOBIL (alles bis 900px = Hauptlayout) ===== */
+        /* ===== BASIS MOBIL (bis 900px) ===== */
         @media (max-width: 900px) {
-            /* Body */
             html, body { overflow-x: hidden; width: 100%; max-width: 100vw; }
-            body { padding: 0; align-items: stretch; -webkit-overflow-scrolling: touch; }
+            body { padding: 0; align-items: stretch; }
 
-            /* Container: Platz für fixe Top-Nav, kein seitlicher Überlauf */
-            .container { border-radius: 0; padding: 60px 10px 16px; box-shadow: none; min-height: 100svh; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+            .container {
+                border-radius: 0;
+                padding: 10px 10px 80px;
+                box-shadow: none;
+                min-height: 100svh;
+                width: 100%;
+                box-sizing: border-box;
+                overflow-x: hidden;
+                margin: 0;
+                padding-top: 65px; /* Platz für fixe Top-Nav */
+            }
 
-            /* Header: kompakt, wichtigste Infos bleiben */
             .header { padding: 8px 12px; margin-bottom: 10px; border-radius: 10px; gap: 6px; flex-wrap: wrap; }
             .header h1 { font-size: 16px; }
             .realistic-badge { font-size: 10px; padding: 1px 5px; }
 
-            /* Stats: 2-Spalten-Grid */
             .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; width: 100%; }
             .stats span { font-size: 11px; }
 
-            /* Desktop Tabs raus, Mobile-Nav rein */
             .tabs { display: none; }
+
             .mobile-bottom-nav {
                 display: flex;
                 position: fixed;
@@ -654,37 +657,36 @@
                 border-bottom: 1px solid #1e2d42;
                 z-index: 1000;
                 box-shadow: 0 3px 16px rgba(0,0,0,0.6);
+                height: 55px;
+                align-items: stretch;
             }
             .mobile-bottom-nav .mob-tab {
                 flex: 1; display: flex; flex-direction: column;
                 align-items: center; justify-content: center;
-                padding: 6px 1px; background: none; border: none;
+                padding: 4px 1px; background: none; border: none;
                 color: #5a7a9a; font-size: 8.5px; font-weight: 600;
-                cursor: pointer; transition: color .15s; gap: 2px; min-width: 0;
+                cursor: pointer; transition: color .15s; gap: 1px; min-width: 0;
                 -webkit-tap-highlight-color: transparent; overflow: hidden;
+                height: 100%;
             }
             .mobile-bottom-nav .mob-tab .mob-icon { font-size: 18px; line-height: 1; }
-            .mobile-bottom-nav .mob-tab span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center; }
+            .mobile-bottom-nav .mob-tab span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center; font-size: 8px; }
             .mobile-bottom-nav .mob-tab.active { color: #f7931a; }
 
-            /* Uhrzeit / Datum leiste */
             .game-clock { gap: 6px; flex-wrap: wrap; }
             .game-clock .date-box, .game-clock .time-box { font-size: 11px; padding: 3px 8px; }
             .speed-label { font-size: 10px; margin-left: 4px; }
             .offline-badge { display: none; }
 
-            /* Dashboard stat cards: immer 3 Spalten auf Mobile */
             .dash-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
             .dash-card { padding: 8px 10px; border-radius: 10px; }
             .dash-card .dc-label { font-size: 9px; }
             .dash-card .dc-val { font-size: 15px; }
 
-            /* Wetter */
             .weather-forecast { padding: 10px 12px; gap: 6px; }
             .weather-icon { font-size: 22px; }
             .weather-forecast .weather-detail { font-size: 12px; }
 
-            /* Kosten-Leiste: horizontal scrollbar */
             .costs, .profit {
                 overflow-x: auto; flex-wrap: nowrap;
                 -webkit-overflow-scrolling: touch;
@@ -694,68 +696,56 @@
             .costs::-webkit-scrollbar, .profit::-webkit-scrollbar { display: none; }
             .costs span, .profit span { white-space: nowrap; font-size: 12px; }
 
-            /* Miner-Grid: 1 Spalte */
             .miner-grid { grid-template-columns: 1fr; gap: 10px; }
             .miner-card { padding: 12px; }
             .miner-card h3 { font-size: 15px; }
 
-            /* Shop: Bild + Info untereinander, Button volle Breite */
             .shop-item { flex-direction: column; align-items: flex-start; padding: 10px 12px; gap: 8px; }
             .shop-item img { width: 80px !important; height: 80px !important; }
             .shop-item button { width: 100%; padding: 12px; font-size: 15px; border-radius: 10px; min-height: 48px; }
             .shop-category { font-size: 14px; padding: 8px 12px; }
 
-            /* Dealer: 1 Spalte, Input grösser */
             .dealer-grid { grid-template-columns: 1fr; gap: 12px; }
             .dealer-card .rate { font-size: 28px; }
-            .dealer-card .btc-amount { gap: 8px; }
+            .dealer-card .btc-amount { gap: 8px; flex-wrap: wrap; }
             .dealer-card .btc-amount input { font-size: 20px; padding: 10px; width: 100%; border-radius: 10px; }
             .dealer-card .max-btn { padding: 10px 14px; font-size: 14px; min-height: 48px; }
             .sell-btn { font-size: 16px; padding: 14px; min-height: 52px; }
 
-            /* Finance: 1 Spalte */
             .finance-grid { grid-template-columns: 1fr; gap: 10px; }
             .finance-summary { gap: 10px; }
             .finance-summary .item .value { font-size: 15px; }
 
-            /* Wetterkarte: volle Breite */
             .weather-map-wrap { max-width: 100%; }
 
-            /* Footer */
-            .footer { flex-direction: column; align-items: stretch; gap: 8px; }
+            .footer { flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 20px; }
             .reset-btn { width: 100%; padding: 14px; font-size: 15px; min-height: 52px; }
             .footer span { text-align: center; font-size: 12px; }
 
-            /* Alle Touch-Targets: mind. 44px */
             button { min-height: 44px; -webkit-tap-highlight-color: transparent; }
-
-            /* Reparieren/Verkaufen Buttons in Miner-Cards */
             .repair-miner-btn, .sell-miner-btn { min-height: 48px !important; font-size: 13px !important; }
-
-            /* Tab-Inhalte: kein overflow-x */
             .tab-content { overflow-x: hidden; }
 
-            /* Scroll-Indikator für horizontale Listen */
             .costs::after, .profit::after {
                 content: ''; display: block; min-width: 12px; height: 1px;
             }
         }
 
-        /* ===== DESKTOP: > 900px (minimale Anpassungen) ===== */
+        /* ===== DESKTOP: > 900px ===== */
         @media (min-width: 901px) {
             .mobile-bottom-nav { display: none !important; }
             .tabs { display: flex !important; }
             body { padding: 20px; }
-            .container { border-radius: 16px; padding: 24px; }
+            .container { border-radius: 16px; padding: 24px; margin: 20px auto; }
         }
 
-        /* ===== TABLET: 601–900px (2-Spalten-Korrekturen) ===== */
+        /* ===== TABLET: 601–900px ===== */
         @media (min-width: 601px) and (max-width: 900px) {
             .miner-grid { grid-template-columns: repeat(2, 1fr); }
             .dealer-grid { grid-template-columns: repeat(2, 1fr); }
             .finance-grid { grid-template-columns: repeat(2, 1fr); }
             .dash-grid { grid-template-columns: repeat(3, 1fr); }
-            .container { padding: 70px 16px 20px; }
+            .container { padding: 70px 16px 80px; }
         }
     </style>
 </head>
@@ -789,10 +779,8 @@
 
         <!-- ===== SERVER TAB ===== -->
         <div class="tab-content active" id="tab-server">
-            <!-- Standort-Selektor -->
             <div id="locationSwitcher" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;"></div>
 
-            <!-- Prestige Button -->
             <button id="prestigeBtn" onclick="doPrestige()" style="display:none; width:100%; padding:12px; margin-bottom:14px;
                 background:linear-gradient(135deg,#2d1f5e,#1a3a6e); border:1px solid #7c4dff;
                 color:#ce93d8; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer;">
@@ -803,6 +791,8 @@
                 <h3>Mining Rigs · <span id="minerCount">0</span> aktiv · Slots: <span id="maxMinersDisplay">0/10</span></h3>
                 <span class="power-total">⚡ <span id="solarCount">0</span> Solar · 🔋 <span id="batteryPercent">0</span>%</span>
             </div>
+
+            <div class="dash-grid">
                 <div class="dash-card"><div class="dc-label">⛏️ Hashrate</div><div class="dc-val orange" id="dashHashrate">0 TH/s</div></div>
                 <div class="dash-card"><div class="dc-label">₿ BTC/Stunde</div><div class="dc-val orange" id="dashBtcHour">0.000000</div></div>
                 <div class="dash-card"><div class="dc-label">🔋 Batterie</div><div class="dc-val blue" id="dashBattery">0%</div></div>
@@ -818,7 +808,6 @@
                 </div>
             </div>
 
-            <!-- OFFLINE FARMING INFO -->
             <div id="offlineInfo" style="background:#2a3a2a; border-radius:12px; padding:12px 18px; margin:10px 0; border:1px solid #4a6a4a; display:none;">
                 <span style="color:#81c784;">🔄 <strong>Offline-Farming!</strong></span>
                 <span style="color:#a5d6a7;" id="offlineMinedText">Du warst 0 Minuten weg und hast 0.0000 BTC gemined.</span>
@@ -1152,7 +1141,6 @@
 
         const SERVER_UPGRADE = { name: 'Mining-Farm Erweiterung', price: 5000, desc: '+1 Rig-Slot (max. 10)' };
 
-        // Kühlsysteme: senken die Temperatursteigerungsrate aller Miner
         const COOLING_SYSTEMS = [
             { name: 'Standventilatoren', price: 5000,
               desc: 'Einfache Ventilatoren · Temp-Anstieg −30%',
@@ -1175,7 +1163,6 @@
             { id: 'night', icon: '🌙', label: 'Nacht', production: 0.0, minDuration: 6, maxDuration: 10 }
         ];
 
-        // Startdatum = heute um Mitternacht, damit Tag 1 mit dem echten Kalender übereinstimmt
         const TODAY = new Date();
         const START_DATE = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
 
@@ -1201,7 +1188,7 @@
                 weatherTimer: 4 * 3600,
                 weatherHistory: [],
                 gameTime: now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds(),
-                speed: 1, // Echtzeit: 1 Spielsekunde = 1 Echtzeit-Sekunde
+                speed: 1,
                 minerTemp: [],
                 minerWear: [],
                 notifSent: {},
@@ -1244,9 +1231,8 @@
             { id:3, name:'Frankfurt', emoji:'🏦', unlockCost:4000000, rentBase:3500, desc:'Finanzzentrum, maximale Hashrate +5%' },
         ];
 
-        // Prestige-Anforderung: 10 BTC für Level 1, 50 BTC für Level 2, etc.
         const PRESTIGE_REQUIREMENTS = [10, 50, 150, 400, 1000];
-        const PRESTIGE_BONUSES = [0.10, 0.25, 0.45, 0.70, 1.00]; // +10% bis +100% Mining
+        const PRESTIGE_BONUSES = [0.10, 0.25, 0.45, 0.70, 1.00];
 
         function getActiveLoc() {
             return state.locations[state.activeLocation] || state.locations[0];
@@ -1256,9 +1242,7 @@
             let total = 0;
             const loc = getActiveLoc();
             for (const idx of loc.miners) total += ASIC_MINERS[idx].hash;
-            // Frankfurt-Bonus +5%
             if (state.activeLocation === 3) total *= 1.05;
-            // Prestige-Bonus
             total *= (1 + (state.prestigeBonus || 0));
             return parseFloat(total.toFixed(2));
         }
@@ -1267,7 +1251,7 @@
             let total = 0;
             const loc = getActiveLoc();
             for (const idx of loc.miners) total += ASIC_MINERS[idx].power;
-            if (loc.coolingLevel >= 0) total += 200; // Kühlsystem-Verbrauch
+            if (loc.coolingLevel >= 0) total += 200;
             return total;
         }
 
@@ -1338,7 +1322,6 @@
                 if (state.activeLocation === undefined) state.activeLocation = 0;
                 if (state.prestigeLevel === undefined) state.prestigeLevel = 0;
                 if (state.prestigeBonus === undefined) state.prestigeBonus = 0;
-                // Migrate old save: convert flat miners/solarSystems to locations array
                 if (state.miners && !state.locations[0].miners.length) {
                     state.locations[0].miners = state.miners || [2];
                     state.locations[0].solarSystems = state.solarSystems || [2];
@@ -1354,16 +1337,13 @@
                 if (!Array.isArray(state.paymentHistory)) state.paymentHistory = [];
                 if (!Array.isArray(state.rateHistory)) state.rateHistory = [];
 
-                // Wetter nach dem Laden neu bestimmen basierend auf aktueller Spielzeit
-                // damit kein eingefrorener Nacht-Zustand bleibt
                 const hours = (state.gameTime % 86400) / 3600;
                 const isNight = hours < 6 || hours >= 21;
                 if (isNight) {
-                    state.weatherIndex = 3; // Nacht
+                    state.weatherIndex = 3;
                     const hoursUntilMorning = hours >= 21 ? (24 - hours + 6) : (6 - hours);
                     state.weatherTimer = hoursUntilMorning * 3600;
                 } else {
-                    // Tagsüber: zufälliges Tageswetter neu würfeln
                     changeWeather();
                 }
 
@@ -1372,18 +1352,15 @@
         }
 
         // ============================================================
-        //  OFFLINE FARMING 🔥 NEU
+        //  OFFLINE FARMING
         // ============================================================
         function processOfflineFarming() {
             const now = Date.now();
             const realSeconds = (now - state.lastSave) / 1000;
-            // Echtzeit: 1 Spielsekunde = 1 Echtzeit-Sekunde, kein Multiplikator nötig
             const gameSeconds = realSeconds * state.speed;
 
-            // Timestamp sofort aktualisieren und speichern damit er korrekt ist
             state.lastSave = now;
 
-            // Nur wenn mehr als 60 Echtzeit-Sekunden vergangen sind
             if (realSeconds < 60) {
                 saveGame();
                 return;
@@ -1393,13 +1370,10 @@
             const difficulty = getDifficultyMultiplier();
             const consumption = getTotalPower();
 
-            // Durchschnittliche Solarproduktion über 24h unabhängig vom aktuellen Wetter:
-            // 9h Nacht (0%) + 4h bewölkt (50%) + 3h Regen (15%) + 8h Sonne (100%) = ~48% Durchschnitt
-            const peakProduction = getTotalPeakProduction(); // maximale Solarleistung bei 100% Sonne
+            const peakProduction = getTotalPeakProduction();
             const avgProduction = peakProduction * 0.48;
             const netPower = avgProduction - consumption;
 
-            // Batterie über die Offline-Zeit simulieren
             const totalBatteryCap = getTotalBattery();
             if (netPower < 0) {
                 const drain = Math.abs(netPower) / 3600 * gameSeconds;
@@ -1409,16 +1383,12 @@
                 getActiveLoc().battery = Math.min(totalBatteryCap, (getActiveLoc().battery || 0) + charge);
             }
 
-            // Mining möglich wenn Solar im Durchschnitt genug liefert ODER Batterie noch geladen
             const hasPower = (avgProduction > 0 || (getActiveLoc().battery || 0) > 0) && getActiveLoc().miners.length > 0;
 
-            // Spielzeit vorwärts spulen
             state.gameTime += Math.floor(gameSeconds);
 
-            // dealerTimer für offline-Zeit korrekt reduzieren (damit kein sofortiger Kurswechsel beim Start)
             if (state.dealerTimer > 0) {
                 state.dealerTimer = Math.max(0, state.dealerTimer - Math.floor(gameSeconds));
-                // Wenn Timer abgelaufen: neuen Kurs generieren und Timer zurücksetzen
                 if (state.dealerTimer <= 0) {
                     generateRates();
                     state.dealerTimer = 24 * 60 * 60;
@@ -1439,7 +1409,6 @@
                 state.btc += mined;
                 state.totalMined += mined;
 
-                // Monatszahlungen für vergangene Spieltage nachberechnen
                 const gameDaysPassed = Math.floor(gameSeconds / 86400);
                 if (gameDaysPassed > 0) {
                     const monthlyRent = getRentCost();
@@ -1493,7 +1462,6 @@
         function getInsuranceCost() { return 0; }
 
         function getPowerCost() {
-            // Netzstrom aller Standorte summieren
             let total = 0;
             for (const loc of state.locations) {
                 total += (loc.gridEnergyUsed || 0);
@@ -1614,13 +1582,11 @@
             const weather = getWeather();
             const peakProduction = getTotalPeakProduction();
 
-            // Karte: Wetter-Klasse setzen (steuert CSS-Hintergrund + Effekte)
             const mapWrap = document.getElementById('weatherMapWrap');
             if (mapWrap && mapWrap.dataset.currentWeather !== weather.id) {
                 mapWrap.className = 'weather-map-wrap ' + weather.id;
                 mapWrap.dataset.currentWeather = weather.id;
 
-                // Regen neu aufbauen nur bei Wechsel zu/von Regen
                 const rainLayer = document.getElementById('rainLayer');
                 if (weather.id === 'rainy' && rainLayer.children.length === 0) {
                     let rainHtml = '';
@@ -1635,7 +1601,6 @@
                     rainLayer.innerHTML = '';
                 }
 
-                // Sterne neu aufbauen nur bei Wechsel zu/von Nacht
                 const starLayer = document.getElementById('starLayer');
                 if (weather.id === 'night' && starLayer.children.length === 0) {
                     let starHtml = '';
@@ -1662,14 +1627,12 @@
             document.getElementById('weatherTabChange').textContent =
                 remHours > 0 ? `~${remHours}h ${remMins}min` : `~${remMins}min`;
 
-            // Statistik (Verlauf-basiert)
             const stats = getWeatherStats();
             document.getElementById('weatherStatSunny').textContent = Math.round(stats.sunny * 100) + '%';
             document.getElementById('weatherStatCloudy').textContent = Math.round(stats.cloudy * 100) + '%';
             document.getElementById('weatherStatRainy').textContent = Math.round(stats.rainy * 100) + '%';
             document.getElementById('weatherStatNight').textContent = Math.round(stats.night * 100) + '%';
 
-            // Solarertrag-Tabelle je Wettertyp (mit aktueller Anlage)
             const yieldEl = document.getElementById('weatherYieldTable');
             const rows = WEATHER_TYPES.map(w => {
                 const watts = Math.round(peakProduction * w.production);
@@ -1684,7 +1647,6 @@
             }).join('');
             yieldEl.innerHTML = rows;
 
-            // Wetter-Verlauf (letzte 15)
             const historyEl = document.getElementById('weatherHistoryGrid');
             const iconMap = { sunny: '☀️', cloudy: '⛅', rainy: '🌧️', night: '🌙' };
             const labelMap = { sunny: 'Sonnig', cloudy: 'Bewölkt', rainy: 'Regen', night: 'Nacht' };
@@ -1714,7 +1676,7 @@
                 const rent = getRentCost();
                 const maintenance = getMaintenanceCost();
                 const insurance = getInsuranceCost();
-                const power = getPowerCost(); // basiert auf echtem Netzstromverbrauch
+                const power = getPowerCost();
                 const total = rent + maintenance + insurance + power;
 
                 if (state.eur >= total) {
@@ -1737,7 +1699,7 @@
                 });
 
                 loc.lastPaymentDay = currentDay;
-                loc.gridEnergyUsed = 0; // Zähler zurücksetzen für nächsten Monat
+                loc.gridEnergyUsed = 0;
                 if (state.paymentHistory.length > 24) state.paymentHistory.shift();
                 render();
             }
@@ -1750,7 +1712,7 @@
             renderStats();
             renderMiners();
             renderShop();
-            updateDealerStats(); // nur Kurs/BTC-Balance updaten, nie das Input-Feld
+            updateDealerStats();
             renderFinance();
             const weatherTab = document.getElementById('tab-weather');
             if (weatherTab && weatherTab.classList.contains('active')) renderWeatherTab();
@@ -1850,8 +1812,6 @@
             const dailyBtc = effectiveHash * 0.000003528;
             const btcPerRealHour = dailyBtc / 24;
             const dailyRevenue = dailyBtc * getAverageRate();
-            // Nur echter Netzstromverbrauch zählt (nicht die rohe Differenz Solar/Verbrauch,
-            // da die Batterie den Unterschied oft komplett abfängt)
             const dailyPowerCost = state.powerSource === 'grid' ? (consumption * 24) / 1000 * 0.30
                                   : state.powerSource === 'mixed' ? (consumption * 24) / 1000 * 0.30 * 0.5
                                   : 0;
@@ -1888,7 +1848,6 @@
             grid.innerHTML = '';
             const production = getTotalProduction();
 
-            // Standort-Selektor aktualisieren
             const locSwitcher = document.getElementById('locationSwitcher');
             if (locSwitcher) {
                 locSwitcher.innerHTML = state.locations.map((l, i) => `
@@ -1902,7 +1861,6 @@
                 `).join('');
             }
 
-            // Prestige-Button
             const prestigeBtn = document.getElementById('prestigeBtn');
             if (prestigeBtn) {
                 const lvl = state.prestigeLevel || 0;
@@ -1916,7 +1874,6 @@
                 prestigeBtn.disabled = !canP;
             }
 
-            // Max-Rigs Badge
             const maxEl = document.getElementById('maxMinersDisplay');
             if (maxEl) maxEl.textContent = `${loc.miners.length} / ${loc.maxMiners}`;
 
@@ -1942,7 +1899,6 @@
                     const refund = Math.round(miner.price * 0.5);
                     const repairCost = Math.round(miner.price * 0.05 * wear / 100);
 
-                    // Temperaturfarbe
                     const tempColor = temp < 70 ? '#81c784' : temp < 85 ? '#ffd54f' : '#ff6b6b';
                     const wearColor = wear < 30 ? '#4fc3f7' : wear < 70 ? '#ffd54f' : '#ff6b6b';
 
@@ -1992,11 +1948,9 @@
                 grid.appendChild(card);
             }
 
-            // Event-Listener für Verkauf-Buttons
             grid.querySelectorAll('.sell-miner-btn').forEach(btn => {
                 btn.addEventListener('click', function() { sellMiner(parseInt(this.dataset.slot)); });
             });
-            // Event-Listener für Reparatur-Buttons
             grid.querySelectorAll('.repair-miner-btn').forEach(btn => {
                 btn.addEventListener('click', function() { repairMiner(parseInt(this.dataset.slot)); });
             });
@@ -2074,7 +2028,6 @@
             `;
             container.appendChild(upgradeDiv);
 
-            // Kühlsysteme
             const loc = getActiveLoc();
             const coolingCategory = document.createElement('div');
             coolingCategory.className = 'shop-category';
@@ -2109,7 +2062,6 @@
                 container.appendChild(div);
             }
 
-            // Neue Standorte freischalten
             const locCategory = document.createElement('div');
             locCategory.className = 'shop-category';
             locCategory.innerHTML = '<span class="cat-icon">🏙️</span> Neue Standorte freischalten';
@@ -2150,7 +2102,6 @@
             });
         }
 
-        // Wird nur aufgerufen wenn Input-Felder neu gebaut werden müssen (Tab-Wechsel / Kurswechsel)
         let dealerBuilt = false;
 
         function renderDealer() {
@@ -2226,7 +2177,6 @@
                 updatePreview(i, rate);
             }
 
-            // Kurshistorie
             const historyContainer = document.getElementById('rateHistory');
             historyContainer.innerHTML = '';
             const history = state.rateHistory.slice(-10);
@@ -2245,7 +2195,6 @@
             updateTimer();
         }
 
-        // Aktualisiert nur Kurszahlen – berührt NIEMALS die Input-Felder
         function updateDealerStats() {
             const avgRate = getAverageRate();
             const avgEl = document.getElementById('avgRateDisplay');
@@ -2253,7 +2202,6 @@
             if (avgEl) avgEl.textContent = `€${avgRate.toFixed(2)}`;
             if (timeEl) timeEl.textContent = getGameDateTime(state.gameTime).full;
 
-            // Marktphase anzeigen
             const phaseEl = document.getElementById('marketPhaseDisplay');
             if (phaseEl && state.marketPhase) {
                 const phaseMap = {
@@ -2274,7 +2222,6 @@
                 if (rateEl) rateEl.textContent = `€${rate.toFixed(2)}`;
                 if (feeEl) feeEl.textContent = `2% Gebühr · €${(rate * 0.02).toFixed(2)} pro BTC`;
                 if (ratePreviewEl) ratePreviewEl.textContent = `€${rate.toFixed(2)}`;
-                // Sell-Button disabled-Status aktualisieren ohne Input zu ändern
                 const input = document.getElementById(`btcAmount_${i}`);
                 const sellBtn = document.getElementById(`sellBtn_${i}`);
                 if (input && sellBtn) {
@@ -2338,7 +2285,6 @@
             document.getElementById('financeRentNext').textContent = nextDateStr;
             document.getElementById('financeRentCountdown').textContent = `${daysUntilPayment} Tage`;
 
-
             document.getElementById('financePowerAmount').textContent = `€${getPowerCost().toFixed(2)}`;
             const totalGridUsed = state.locations.reduce((s, l) => s + (l.gridEnergyUsed || 0), 0);
             document.getElementById('financePowerUsage').textContent = `${Math.round(totalGridUsed)} Wh`;
@@ -2349,7 +2295,6 @@
             if (covEl) { covEl.textContent = coverage + '%'; covEl.style.color = coverage >= 100 ? '#81c784' : coverage >= 50 ? '#ffd54f' : '#ff6b6b'; }
             document.getElementById('financePowerNext').textContent = nextDateStr;
             document.getElementById('financePowerCountdown').textContent = `${daysUntilPayment} Tage`;
-
 
             const historyContainer = document.getElementById('paymentHistory');
             historyContainer.innerHTML = '';
@@ -2481,11 +2426,10 @@
             for (const key in state) delete state[key];
             Object.assign(state, fresh);
 
-            // Prestige-Werte beibehalten
             state.prestigeLevel = (state.prestigeLevel || 0) + 1;
             state.prestigeBonus = bonus;
             state.totalPrestigeBtc = (state.totalPrestigeBtc || 0) + prevTotal;
-            state.btc = prevBtc; // BTC bleibt erhalten
+            state.btc = prevBtc;
 
             tickCounter = 0; dealerBuilt = false;
             generateRates(); changeWeather();
@@ -2496,10 +2440,6 @@
         // ============================================================
         //  MARKT-LOGIK
         // ============================================================
-        // Marktphasen: bull / bear / sideways
-        // btcPrice = globaler Referenzpreis, bewegt sich je nach Phase
-        // Händler-Kurse = btcPrice ± kleiner individueller Spread
-
         function initMarket() {
             if (!state.btcPrice) state.btcPrice = 55000;
             if (!state.marketPhase) state.marketPhase = 'sideways';
@@ -2510,46 +2450,41 @@
         function advanceMarket() {
             initMarket();
 
-            // Phasenwechsel wenn Zeit abgelaufen
             state.marketPhaseDaysLeft--;
             if (state.marketPhaseDaysLeft <= 0) {
                 const roll = Math.random();
                 if (roll < 0.35) {
                     state.marketPhase = 'bull';
-                    state.marketPhaseDaysLeft = 3 + Math.floor(Math.random() * 10); // 3–12 Tage
+                    state.marketPhaseDaysLeft = 3 + Math.floor(Math.random() * 10);
                     state.marketVolatility = 0.02 + Math.random() * 0.03;
                 } else if (roll < 0.65) {
                     state.marketPhase = 'bear';
-                    state.marketPhaseDaysLeft = 2 + Math.floor(Math.random() * 8);  // 2–9 Tage
+                    state.marketPhaseDaysLeft = 2 + Math.floor(Math.random() * 8);
                     state.marketVolatility = 0.02 + Math.random() * 0.04;
                 } else {
                     state.marketPhase = 'sideways';
-                    state.marketPhaseDaysLeft = 5 + Math.floor(Math.random() * 10); // 5–14 Tage
+                    state.marketPhaseDaysLeft = 5 + Math.floor(Math.random() * 10);
                     state.marketVolatility = 0.005 + Math.random() * 0.015;
                 }
             }
 
-            // Trend je nach Phase
             let trend = 0;
-            if (state.marketPhase === 'bull')     trend = 0.01 + Math.random() * 0.04;  // +1% bis +5%
-            if (state.marketPhase === 'bear')     trend = -(0.01 + Math.random() * 0.05); // -1% bis -6%
-            if (state.marketPhase === 'sideways') trend = (Math.random() - 0.5) * 0.02;  // ±1%
+            if (state.marketPhase === 'bull')     trend = 0.01 + Math.random() * 0.04;
+            if (state.marketPhase === 'bear')     trend = -(0.01 + Math.random() * 0.05);
+            if (state.marketPhase === 'sideways') trend = (Math.random() - 0.5) * 0.02;
 
-            // Zufälliger Tages-Noise obendrauf
             const noise = (Math.random() - 0.5) * 2 * state.marketVolatility;
 
-            // Seltene Extremereignisse (5% Chance): Crash oder Pump
             let shock = 0;
             const eventRoll = Math.random();
-            if (eventRoll < 0.025) shock = -(0.08 + Math.random() * 0.12); // Crash: -8% bis -20%
-            if (eventRoll > 0.975) shock =  (0.08 + Math.random() * 0.15); // Pump:  +8% bis +23%
+            if (eventRoll < 0.025) shock = -(0.08 + Math.random() * 0.12);
+            if (eventRoll > 0.975) shock =  (0.08 + Math.random() * 0.15);
 
             const change = trend + noise + shock;
             state.btcPrice = Math.max(8000, Math.round(state.btcPrice * (1 + change)));
 
-            // Händler-Kurse = btcPrice ± individueller Spread (±2%)
             for (let i = 0; i < 4; i++) {
-                const spread = (Math.random() - 0.5) * 0.04; // ±2%
+                const spread = (Math.random() - 0.5) * 0.04;
                 state.dealerRates[i] = Math.round(state.btcPrice * (1 + spread) * 100) / 100;
             }
 
@@ -2642,7 +2577,6 @@
                 if (state.weatherTimer > 0) {
                     state.weatherTimer = Math.max(0, state.weatherTimer - 1);
                 }
-                // Tag/Nacht live pruefen: falsches Wetter sofort korrigieren
                 checkDayNightTransition();
                 if (state.weatherTimer <= 0 && !isNightTime()) {
                     changeWeather();
@@ -2654,12 +2588,11 @@
                 if (state.dealerTimer <= 0) {
                     generateRates();
                     state.dealerTimer = 24 * 60 * 60;
-                    // Dealer-Tab neu aufbauen wenn er gerade sichtbar ist
                     const dealerTab = document.getElementById('tab-dealer');
                     if (dealerTab && dealerTab.classList.contains('active')) {
                         renderDealer();
                     } else {
-                        dealerBuilt = false; // wird beim nächsten Tab-Öffnen neu gebaut
+                        dealerBuilt = false;
                     }
                 }
 
@@ -2682,8 +2615,6 @@
         function resetGame() {
             if (!confirm('🔄 Spiel wirklich neu starten?\n\nAlle Fortschritte gehen verloren: Bitcoin, Geld, Miner, Solaranlagen, Kühlsystem, Verschleiß und Netzstromkosten werden komplett zurückgesetzt.')) return;
 
-            // Kompletter State-Reset: garantiert dass WIRKLICH alle Felder zurückgesetzt werden
-            // (Kühlsystem, Netzstromzähler, Temperatur, Verschleiß, Marktphase, etc.)
             const fresh = getInitialState();
             for (const key in state) delete state[key];
             Object.assign(state, fresh);
@@ -2697,9 +2628,9 @@
         }
 
         // ============================================================
-        //  SPEED CONTROLS (entfernt - fest 60x)
+        //  SPEED CONTROLS
         // ============================================================
-        function initSpeedControls() { /* speed ist fest 60x */ }
+        function initSpeedControls() { /* speed ist fest 1x */ }
 
         // ============================================================
         //  TABS
@@ -2722,7 +2653,6 @@
                 mobButtons.forEach(b => { if (b.dataset.tab === tabId) b.classList.add('active'); });
                 Object.values(tabContents).forEach(c => c.classList.remove('active'));
                 if (tabContents[tabId]) tabContents[tabId].classList.add('active');
-                // Dealer-Tab: Input-Felder nur beim Öffnen neu bauen
                 if (tabId === 'dealer') renderDealer();
                 if (tabId === 'weather') renderWeatherTab();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2745,7 +2675,6 @@
                 changeWeather();
             }
 
-            // 🔥 Offline-Farming prüfen
             processOfflineFarming();
 
             render();
@@ -2756,7 +2685,6 @@
             setInterval(tick, 1000);
             setInterval(updateTimer, 5000);
 
-            // Alle 30 Sekunden speichern inkl. aktuellem Timestamp für Offline-Farming
             setInterval(() => {
                 state.lastSave = Date.now();
                 saveGame();
@@ -2764,7 +2692,7 @@
         }
 
         // ============================================================
-        //  ANIMIERTER HINTERGRUND (Canvas Partikel)
+        //  ANIMIERTER HINTERGRUND
         // ============================================================
         function initBackground() {
             const canvas = document.getElementById('bg-canvas');
@@ -2815,7 +2743,7 @@
         }
 
         // ============================================================
-        //  COIN-POP ANIMATION beim Verkauf
+        //  COIN-POP ANIMATION
         // ============================================================
         function triggerCoinPop(x, y) {
             for (let i = 0; i < 6; i++) {
@@ -2845,23 +2773,19 @@
             if (state.notifSent[tag]) return;
             state.notifSent[tag] = true;
             new Notification(title, { body, icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">₿</text></svg>' });
-            // Tag nach 5 Min zurücksetzen damit gleiche Notif wieder kommen kann
             setTimeout(() => { delete state.notifSent[tag]; }, 5 * 60 * 1000);
         }
 
         function checkNotifications() {
-            // Batterie leer
             const totalBattery = getTotalBattery();
             const pct = totalBattery > 0 ? (getActiveLoc().battery || 0) / totalBattery : 1;
             if (pct < 0.05) sendNotif('⚡ Batterie fast leer!', 'Die Batterie ist unter 5% – Mining könnte ausfallen.', 'battery_low');
 
-            // Miner überhitzt
             for (let i = 0; i < getActiveLoc().miners.length; i++) {
                 const temp = getActiveLoc().minerTemp[i] || 50;
                 if (temp >= 90) sendNotif('🌡️ Miner überhitzt!', `Rig #${i+1} hat ${Math.round(temp)}°C – Leistungsverlust aktiv!`, `overheat_${i}`);
             }
 
-            // Kurs starker Einbruch
             if (state.rateHistory.length >= 2) {
                 const last = state.rateHistory[state.rateHistory.length - 1].rate;
                 const prev = state.rateHistory[state.rateHistory.length - 2].rate;
@@ -2934,7 +2858,6 @@
             h('dashNetDay', '€' + dailyNet.toFixed(0));
             h('dashDay', gameTime.day);
 
-            // Farbe Netto
             const el = document.getElementById('dashNetDay');
             if (el) el.className = 'dc-val ' + (dailyNet >= 0 ? 'green' : 'red');
             const elBat = document.getElementById('dashBattery');
@@ -2945,19 +2868,13 @@
         initBackground();
         requestNotifPermission();
 
-        // Coin-Pop beim Verkauf einbinden
         document.addEventListener('click', function(e) {
             const btn = e.target.closest('.sell-btn');
             if (btn) triggerCoinPop(e.clientX, e.clientY);
         });
 
-        // Dashboard jede Sekunde aktualisieren
         setInterval(updateDashboard, 1000);
-
-        // Temperatur/Verschleiß alle 10 Spielsekunden
         setInterval(tickMinerCondition, 1000);
-
-        // Benachrichtigungen alle 30s prüfen
         setInterval(checkNotifications, 30000);
     </script>
 </body>
